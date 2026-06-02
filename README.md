@@ -292,19 +292,6 @@ npm test      # or: pnpm test
 
 Both `npm` and `pnpm` are exercised in CI across Node 20 and 22 (see `.github/workflows/ci.yml`).
 
-### Release flow
-
-1. Bump the version: `npm version patch` (or `minor` / `major`).
-2. Push the tag: `git push --follow-tags`.
-3. Either:
-   - Create a GitHub release (the `npm-publish.yml` workflow will publish on the `release: published` event), or
-   - Trigger the workflow manually via the Actions tab (`workflow_dispatch`).
-4. Verify both managers can install it:
-   ```bash
-   npm install exprify
-   pnpm add exprify
-   ```
-
 ### Lockfiles
 
 `package-lock.json` (npm) and `pnpm-lock.yaml` (pnpm) are both committed. Neither is shipped in the published tarball (see `.npmignore`); npm/pnpm consumers generate their own lockfiles when installing.
