@@ -8,8 +8,6 @@ Exprify is a JavaScript expression parser and evaluator for math-heavy apps. It 
 
 ```bash
 npm install exprify
-# or
-yarn add exprify
 ```
 
 ## Quick Start
