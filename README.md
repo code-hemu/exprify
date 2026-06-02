@@ -4,8 +4,6 @@
 
 Exprify is a JavaScript expression parser and evaluator for math-heavy apps. It supports arithmetic, variables, custom functions, unit conversion, matrices, complex numbers, symbolic helpers, and a growing set of linear algebra utilities.
 
-[![Exprify Screenshot](https://raw.githubusercontent.com/code-hemu/Exprify/refs/heads/main/docs/assets/screenshot.jpg)](https://github.com/code-hemu/Exprify)
-
 ## Installation
 
 ```bash
