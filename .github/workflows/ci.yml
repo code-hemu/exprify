@@ -20,9 +20,6 @@ jobs:
         node-version:
           - 20
           - 22
-        package-manager:
-          - npm
-          - pnpm
 
     steps:
       - name: Checkout repository
@@ -32,15 +29,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: ${{ matrix.package-manager }}
+          cache: npm
 
-      - name: Install dependencies (npm)
-        if: matrix.package-manager == 'npm'
+      - name: Install dependencies
         run: npm ci
-
-      - name: Install dependencies (pnpm)
-        if: matrix.package-manager == 'pnpm'
-        run: corepack enable pnpm && pnpm install --frozen-lockfile
 
       - name: Build package
         run: npm run build

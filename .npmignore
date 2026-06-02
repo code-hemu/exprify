@@ -7,5 +7,4 @@ test/
 .gitignore
 CHANGELOG.md
 package-lock.json
-pnpm-lock.yaml
 rollup.config.js

@@ -8,6 +8,8 @@ Exprify is a JavaScript expression parser and evaluator for math-heavy apps. It 
 
 ```bash
 npm install exprify
+# or
+yarn add exprify
 ```
 
 ## Quick Start
@@ -271,7 +273,7 @@ Depending on the expression, `evaluate()` may return:
 ```bash
 git clone https://github.com/code-hemu/Exprify.git
 cd Exprify
-npm install   # or: pnpm install
+npm install
 npm run build
 ```
 
@@ -280,16 +282,16 @@ Build output is written to `dist/`.
 ## Testing
 
 ```bash
-npm test      # or: pnpm test
+npm test
 ```
 
-Both `npm` and `pnpm` are exercised in CI across Node 20 and 22 (see `.github/workflows/ci.yml`).
+Tested in CI across Node 20 and 22 (see `.github/workflows/ci.yml`).
 
-### Lockfiles
+## Publishing
 
-`package-lock.json` (npm) and `pnpm-lock.yaml` (pnpm) are both committed. Neither is shipped in the published tarball (see `.npmignore`); npm/pnpm consumers generate their own lockfiles when installing.
+The package is published to the public npm registry via `npm publish`. The `npm-publish.yml` workflow runs on GitHub release events. See `.github/workflows/npm-publish.yml` for details.
 
-The project intentionally does **not** pin a `packageManager` field. npm 11 and pnpm 11 both refuse to install in a project pinned to the other manager, so leaving it unset lets contributors use either tool freely. The CI matrix (`.github/workflows/ci.yml`) is the authoritative cross-manager test.
+`package-lock.json` is committed but is not shipped in the published tarball (see `.npmignore`); consumers generate their own lockfile when installing.
 
 ## License
 
