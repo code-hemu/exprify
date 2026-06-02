@@ -1,8 +1,10 @@
 # Exprify
 
-[![Exprify Social Banner](https://raw.githubusercontent.com/code-hemu/Exprify/refs/heads/main/src/assets/capture.jpg)](https://github.com/code-hemu/Exprify)
+[![Exprify Social Banner](https://raw.githubusercontent.com/code-hemu/Exprify/refs/heads/main/docs/assets/capture.jpg)](https://github.com/code-hemu/Exprify)
 
 Exprify is a JavaScript expression parser and evaluator for math-heavy apps. It supports arithmetic, variables, custom functions, unit conversion, matrices, complex numbers, symbolic helpers, and a growing set of linear algebra utilities.
+
+[![Exprify Screenshot](https://raw.githubusercontent.com/code-hemu/Exprify/refs/heads/main/docs/assets/screenshot.jpg)](https://github.com/code-hemu/Exprify)
 
 ## Installation
 
@@ -282,6 +284,37 @@ Build output is written to `dist/`.
 ```bash
 npm test
 ```
+
+## Publishing
+
+This package is published to the **public npm registry** (`https://registry.npmjs.org/`). Both `npm` and `pnpm` are valid clients — `npm publish` and `pnpm publish` upload the same tarball to the same registry, so the package is available to consumers regardless of which manager they use.
+
+### One-time setup
+
+1. Create an npm account at https://www.npmjs.com/.
+2. Log in locally (either command stores credentials in the same place):
+   ```bash
+   npm login
+   # or: pnpm login
+   ```
+3. For the CI publish workflow, generate a granular access token at https://www.npmjs.com/settings/→/tokens and add it as the `NPM_TOKEN` repository secret on GitHub.
+
+### Release flow
+
+1. Bump the version: `npm version patch` (or `minor` / `major`).
+2. Push the tag: `git push --follow-tags`.
+3. Either:
+   - Create a GitHub release (the `npm-publish.yml` workflow will publish on the `release: published` event), or
+   - Trigger the workflow manually via the Actions tab (`workflow_dispatch`).
+4. Verify both managers can install it:
+   ```bash
+   npm install exprify
+   pnpm add exprify
+   ```
+
+### Lockfiles
+
+`package-lock.json` (npm) and `pnpm-lock.yaml` (pnpm) are both committed. Neither is shipped in the published tarball (see `.npmignore`); npm/pnpm consumers generate their own lockfiles when installing.
 
 ## License
 
