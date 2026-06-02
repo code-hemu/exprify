@@ -292,20 +292,6 @@ npm test      # or: pnpm test
 
 Both `npm` and `pnpm` are exercised in CI across Node 20 and 22 (see `.github/workflows/ci.yml`).
 
-## Publishing
-
-This package is published to the **public npm registry** (`https://registry.npmjs.org/`). Both `npm` and `pnpm` are valid clients — `npm publish` and `pnpm publish` upload the same tarball to the same registry, so the package is available to consumers regardless of which manager they use.
-
-### One-time setup
-
-1. Create an npm account at https://www.npmjs.com/.
-2. Log in locally (either command stores credentials in the same place):
-   ```bash
-   npm login
-   # or: pnpm login
-   ```
-3. For the CI publish workflow, generate a granular access token at https://www.npmjs.com/settings/→/tokens and add it as the `NPM_TOKEN` repository secret on GitHub.
-
 ### Release flow
 
 1. Bump the version: `npm version patch` (or `minor` / `major`).
