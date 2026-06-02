@@ -1,4 +1,4 @@
-import Exprify from "../src/core/Exprify.js";
+import Exprify from "../dist/exprify.esm.js";
 
 describe("Exprify Engine - Extended Tests", () => {
   let expr;

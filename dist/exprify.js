@@ -1,9 +1,9 @@
 /*!
-* exprify v1.0.2
+* exprify v1.0.4
 * (c) 2026 Nirmal Paul and other contributors
 *
 * Released under the GPL-3.0 License
-* Date: 2026-04-05
+* Date: 2026-06-02
 */
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :

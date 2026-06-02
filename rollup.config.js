@@ -49,7 +49,7 @@ export default [
         sourcemap: true
       },
       {
-        file: "dist/exprify.cjs.js",
+        file: "dist/exprify.cjs.cjs",
         format: "cjs",
         sourcemap: true,
         exports: "default"

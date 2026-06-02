@@ -1,10 +1,16 @@
 {
   "name": "exprify",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "A powerful math expression parser and evaluator with runtime data-type checking",
   "type": "module",
-  "main": "dist/exprify.cjs.js",
+  "main": "dist/exprify.cjs.cjs",
   "module": "dist/exprify.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/exprify.esm.js",
+      "require": "./dist/exprify.cjs.cjs"
+    }
+  },
   "browser": "dist/exprify.js",
   "unpkg": "dist/exprify.min.js",
   "publishConfig": {

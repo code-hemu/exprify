@@ -12,6 +12,8 @@ npm install exprify
 
 ## Quick Start
 
+**ESM** (Node.js, bundlers):
+
 ```js
 import Exprify from "exprify";
 
@@ -25,6 +27,16 @@ console.log(expr.evaluate("x + 5"));
 // 15
 ```
 
+**CommonJS** (`require`):
+
+```js
+const Exprify = require("exprify");
+
+const expr = new Exprify();
+console.log(expr.evaluate("5 + 7 * 2"));
+// 19
+```
+
 ## Browser Usage
 
 ```html
@@ -36,6 +48,19 @@ console.log(expr.evaluate("x + 5"));
 ```
 
 `unpkg` resolves to the browser bundle from `dist/exprify.min.js`.
+
+## Module Formats
+
+The package ships a separate build for each consumer, and `package.json`'s `exports` field routes each import style to the right file:
+
+| Consumer | Resolved file | Notes |
+| --- | --- | --- |
+| `import Exprify from "exprify"` (ESM) | `dist/exprify.esm.js` | Default export is the `Exprify` class. |
+| `const Exprify = require("exprify")` (CJS) | `dist/exprify.cjs.cjs` | `module.exports` is the `Exprify` class. |
+| `<script src="https://unpkg.com/exprify">` | `dist/exprify.min.js` | UMD build; exposes `Exprify` as a global. |
+| `import "exprify/dist/exprify.js"` (UMD) | `dist/exprify.js` | Unminified UMD for bundlers that prefer it. |
+
+The `.cjs` extension on the CommonJS bundle keeps it loadable as CJS even though the package is `"type": "module"`, so `require()` and `import` both work without configuration.
 
 ## API
 
