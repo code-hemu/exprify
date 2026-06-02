@@ -7,14 +7,7 @@ Exprify is a JavaScript expression parser and evaluator for math-heavy apps. It 
 ## Installation
 
 ```bash
-# npm
 npm install exprify
-
-# pnpm
-pnpm add exprify
-
-# yarn
-yarn add exprify
 ```
 
 ## Quick Start
