@@ -281,7 +281,6 @@ export function tokenize(expr, context = {}) {
       continue;
     }
 
-    // operators
     if (operators.includes(char)) {
       flushCurrent(char, i);
 

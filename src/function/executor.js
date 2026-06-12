@@ -26,7 +26,6 @@ export function createFunctionExecutor(fnRegistry, options = {}) {
       throw new Error(`Arguments for "${name}" must be an array`);
     }
 
-    /* ----- EXECUTE ----- */
     try {
       return fn(...args);
     } catch (err) {
@@ -35,8 +34,11 @@ export function createFunctionExecutor(fnRegistry, options = {}) {
     }
   }
 
-  /* ================= SAFE EXECUTE ================= */
-
+  /**
+   * @param {any} name
+   * @param {any} args
+   * @param {any} context
+   */
   function safeExecute(name, args = [], context) {
     try {
       return execute(name, args, context);
