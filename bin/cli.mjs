@@ -132,7 +132,7 @@ for (const arg of args) {
 }
 
 function startREPL() {
-  console.log(`Exprify v${pkg.version} — interactive REPL`);
+  console.log(`Exprify v${pkg.version} - interactive REPL`);
   console.log('Type an expression or .help for commands\n');
 
   const rl = createInterface({

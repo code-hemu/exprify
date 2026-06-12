@@ -579,7 +579,7 @@ exprify
 ```
 
 ```
-Exprify v1.0.5 — interactive REPL
+Exprify v1.0.5 - interactive REPL
 Type an expression or .help for commands
 
 » 2 + 2
