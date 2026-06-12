@@ -1,0 +1,159 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  font: 14px/1.5 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 280px;
+  background: #16213e;
+  border-right: 1px solid #0f3460;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.sidebar h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #e94560;
+  letter-spacing: 1px;
+}
+
+.sidebar h3 {
+  font-size: 12px;
+  color: #888;
+  margin-top: 8px;
+}
+
+.examples-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.examples-list button {
+  background: #0f3460;
+  color: #a0c4ff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: 12px/1.4 monospace;
+  text-align: left;
+}
+
+.examples-list button:hover {
+  background: #1a4a8a;
+  color: #fff;
+}
+
+.vars-table {
+  width: 100%;
+  font-size: 11px;
+  border-collapse: collapse;
+}
+
+.vars-table th {
+  text-align: left;
+  color: #e94560;
+  padding: 2px 4px;
+  border-bottom: 1px solid #333;
+}
+
+.vars-table td {
+  padding: 2px 4px;
+  color: #ccc;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.output {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.output .entry {
+  display: flex;
+  gap: 8px;
+}
+
+.output .prompt {
+  color: #e94560;
+  user-select: none;
+  white-space: pre;
+}
+
+.output .expr {
+  color: #ffd700;
+}
+
+.output .result {
+  color: #7bed9f;
+  white-space: pre-wrap;
+}
+
+.output .error {
+  color: #ff4757;
+}
+
+.output .sep {
+  border-bottom: 1px solid #222;
+  margin: 4px 0;
+}
+
+.input-area {
+  border-top: 1px solid #0f3460;
+  padding: 12px 16px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input-area .prompt {
+  color: #e94560;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.input-area input {
+  flex: 1;
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #1a4a8a;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font: 14px/1.4 monospace;
+  outline: none;
+}
+
+.input-area input:focus {
+  border-color: #e94560;
+}
+
+.input-area input::placeholder {
+  color: #555;
+}

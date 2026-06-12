@@ -1,5 +1,8 @@
 import { ExprDecimal } from '../utils/decimal.js';
 
+/**
+ * @param {any} value
+ */
 export function bigNumber(value) {
   if (ExprDecimal.isDecimal(value)) {
     return value;
@@ -10,10 +13,16 @@ export function bigNumber(value) {
   throw new Error('bignumber() expects a number, string, or bigint');
 }
 
+/**
+ * @param {unknown} v
+ */
 export function isBigNumber(v) {
   return ExprDecimal.isDecimal(v);
 }
 
+/**
+ * @param {ExprDecimal} v
+ */
 export function formatBigNumber(v) {
   if (!ExprDecimal.isDecimal(v)) {
     return String(v);

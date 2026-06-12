@@ -1404,4 +1404,153 @@ export const internalFunctions = {
     }
     return str.substring(start, end);
   },
+
+  // ---- Reciprocal trig ----
+  acot: (/** @type {number} */ x) => {
+    if (x === 0) {return Math.PI / 2;}
+    return Math.atan(1 / x);
+  },
+
+  asec: (/** @type {number} */ x) => {
+    if (x < 1 && x > -1) {throw new Error('asec() domain error');}
+    return Math.acos(1 / x);
+  },
+
+  acsc: (/** @type {number} */ x) => {
+    if (x < 1 && x > -1) {throw new Error('acsc() domain error');}
+    return Math.asin(1 / x);
+  },
+
+  acoth: (/** @type {number} */ x) => {
+    if (Math.abs(x) <= 1) {throw new Error('acoth() domain error');}
+    return Math.atanh(1 / x);
+  },
+
+  asech: (/** @type {number} */ x) => {
+    if (x <= 0 || x > 1) {throw new Error('asech() domain error');}
+    return Math.acosh(1 / x);
+  },
+
+  acsch: (/** @type {number} */ x) => {
+    if (x === 0) {throw new Error('acsch() domain error');}
+    return Math.asinh(1 / x);
+  },
+
+  // ---- Stats ----
+  quantile: (/** @type {any[]} */ arr, /** @type {number} */ p) => {
+    if (!Array.isArray(arr) || arr.length === 0) {throw new Error('quantile() expects a non-empty array');}
+    if (p < 0 || p > 1) {throw new Error('quantile() p must be between 0 and 1');}
+    const sorted = [...arr].sort((a, b) => a - b);
+    const idx = p * (sorted.length - 1);
+    const lo = Math.floor(idx);
+    const hi = Math.ceil(idx);
+    return lo === hi ? sorted[lo] : sorted[lo] + (idx - lo) * (sorted[hi] - sorted[lo]);
+  },
+
+  percentile: (/** @type {any[]} */ arr, /** @type {number} */ p) => {
+    if (p < 0 || p > 100) {throw new Error('percentile() p must be between 0 and 100');}
+    return internalFunctions.quantile(arr, p / 100);
+  },
+
+  covariance: (/** @type {number[]} */ x, /** @type {number[]} */ y) => {
+    if (!Array.isArray(x) || !Array.isArray(y) || x.length < 2 || x.length !== y.length) {
+      throw new Error('covariance() expects two arrays of equal length >= 2');
+    }
+    const mx = x.reduce((s, v) => s + v, 0) / x.length;
+    const my = y.reduce((s, v) => s + v, 0) / y.length;
+    return x.reduce((s, v, i) => s + (v - mx) * (y[i] - my), 0) / (x.length - 1);
+  },
+
+  corr: (/** @type {number[]} */ x, /** @type {number[]} */ y) => {
+    const cov = internalFunctions.covariance(x, y);
+    const sx = Math.sqrt(internalFunctions.covariance(x, x));
+    const sy = Math.sqrt(internalFunctions.covariance(y, y));
+    if (sx === 0 || sy === 0) {throw new Error('corr() zero variance');}
+    return cov / (sx * sy);
+  },
+
+  randomInt: (/** @type {number} */ min, /** @type {number} */ max) => {
+    if (!Number.isInteger(min) || !Number.isInteger(max)) {throw new Error('randomInt() expects integers');}
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  },
+
+  randomNormal: (/** @type {number} */ mean, /** @type {number} */ std) => {
+    if (std <= 0) {throw new Error('randomNormal() std must be > 0');}
+    let u = 0; let v = 0;
+    while (u === 0) {u = Math.random();}
+    while (v === 0) {v = Math.random();}
+    return mean + std * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  },
+
+  // ---- Special functions ----
+  erf: (/** @type {number} */ x) => {
+    if (x === 0) {return 0;}
+    // Abramowitz & Stegun approximation (max error 1.5e-7)
+    const t = 1 / (1 + 0.3275911 * Math.abs(x));
+    const a = [0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429];
+    let p = a[4] * t + a[3];
+    p = p * t + a[2];
+    p = p * t + a[1];
+    p = p * t + a[0];
+    p = p * t;
+    const result = 1 - p * Math.exp(-x * x);
+    return x >= 0 ? result : -result;
+  },
+
+  lgamma: (/** @type {number} */ x) => {
+    if (x <= 0) {throw new Error('lgamma() domain error (x > 0 required)');}
+    // Stirling's approximation
+    if (x < 12) {
+      // Use recurrence: lgamma(x) = lgamma(x+1) - ln(x)
+      let v = x; let r = 0;
+      while (v < 12) { r -= Math.log(v); v += 1; }
+      return r + internalFunctions.lgamma(v);
+    }
+    const inv = 1 / x;
+    const s = (1 / 12 - inv * inv / 360 + inv * inv * inv * inv / 1260) * inv;
+    return (x - 0.5) * Math.log(x) - x + 0.9189385332046727 + s;
+  },
+
+  beta: (/** @type {number} */ a, /** @type {number} */ b) => {
+    if (a <= 0 || b <= 0) {throw new Error('beta() domain error');}
+    return Math.exp(internalFunctions.lgamma(a) + internalFunctions.lgamma(b) - internalFunctions.lgamma(a + b));
+  },
+
+  // ---- Numeric helpers ----
+  hypot: (.../** @type {number[]} */ args) => Math.hypot(...args),
+
+  cbrt: (/** @type {number} */ x) => Math.cbrt(x),
+
+  log2: (/** @type {number} */ x) => {
+    if (x <= 0) {throw new Error('log2() domain error');}
+    return Math.log2(x);
+  },
+
+  log1p: (/** @type {number} */ x) => {
+    if (x <= -1) {throw new Error('log1p() domain error');}
+    return Math.log1p(x);
+  },
+
+  expm1: (/** @type {number} */ x) => Math.expm1(x),
+
+  // ---- Bitwise ----
+  bitAnd: (/** @type {number} */ a, /** @type {number} */ b) => {
+    if (!Number.isInteger(a) || !Number.isInteger(b)) {throw new Error('bitAnd() expects integers');}
+    return a & b;
+  },
+
+  bitOr: (/** @type {number} */ a, /** @type {number} */ b) => {
+    if (!Number.isInteger(a) || !Number.isInteger(b)) {throw new Error('bitOr() expects integers');}
+    return a | b;
+  },
+
+  bitXor: (/** @type {number} */ a, /** @type {number} */ b) => {
+    if (!Number.isInteger(a) || !Number.isInteger(b)) {throw new Error('bitXor() expects integers');}
+    return a ^ b;
+  },
+
+  bitNot: (/** @type {number} */ a) => {
+    if (!Number.isInteger(a)) {throw new Error('bitNot() expects an integer');}
+    return ~a;
+  },
 };

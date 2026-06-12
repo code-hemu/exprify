@@ -971,4 +971,185 @@ describe('Exprify Engine - Extended Tests', () => {
       expect(expr.evaluate('bignumber("1e20") + bignumber("1e20")')).toBe('2e+20');
     });
   });
+
+  describe('New Built-in Functions', () => {
+    describe('Reciprocal Trig', () => {
+      test('acot', () => {
+        const r = expr.evaluate('acot(1)');
+        expect(r).toBeCloseTo(Math.PI / 4, 10);
+      });
+
+      test('asec', () => {
+        const r = expr.evaluate('asec(2)');
+        expect(r).toBeCloseTo(Math.acos(0.5), 10);
+      });
+
+      test('acsc', () => {
+        const r = expr.evaluate('acsc(2)');
+        expect(r).toBeCloseTo(Math.asin(0.5), 10);
+      });
+
+      test('acoth', () => {
+        const r = expr.evaluate('acoth(2)');
+        expect(r).toBeCloseTo(Math.atanh(0.5), 10);
+      });
+
+      test('asech', () => {
+        const r = expr.evaluate('asech(0.5)');
+        expect(r).toBeCloseTo(Math.acosh(2), 10);
+      });
+
+      test('acsch', () => {
+        const r = expr.evaluate('acsch(0.5)');
+        expect(r).toBeCloseTo(Math.asinh(2), 10);
+      });
+    });
+
+    describe('Stats', () => {
+      test('quantile', () => {
+        expect(expr.evaluate('quantile([1,2,3,4,5], 0.5)')).toBe(3);
+        expect(expr.evaluate('quantile([1,2,3,4,5], 0)')).toBe(1);
+        expect(expr.evaluate('quantile([1,2,3,4,5], 1)')).toBe(5);
+      });
+
+      test('percentile', () => {
+        expect(expr.evaluate('percentile([1,2,3,4,5], 50)')).toBe(3);
+      });
+
+      test('covariance', () => {
+        const r = expr.evaluate('covariance([1,2,3,4,5], [2,4,6,8,10])');
+        expect(r).toBeCloseTo(5, 10);
+      });
+
+      test('corr', () => {
+        const r = expr.evaluate('corr([1,2,3,4,5], [2,4,6,8,10])');
+        expect(r).toBeCloseTo(1, 10);
+      });
+
+      test('randomInt', () => {
+        // Run multiple times to ensure range is respected
+        for (let i = 0; i < 100; i++) {
+          const r = expr.evaluate('randomInt(3, 7)');
+          expect(r).toBeGreaterThanOrEqual(3);
+          expect(r).toBeLessThanOrEqual(7);
+        }
+      });
+
+      test('randomNormal uses Box-Muller', () => {
+        // Just verify it runs without error and returns a finite number
+        for (let i = 0; i < 10; i++) {
+          const r = expr.evaluate('randomNormal(0, 1)');
+          expect(typeof r).toBe('number');
+          expect(Number.isFinite(r)).toBe(true);
+        }
+      });
+    });
+
+    describe('Special Functions', () => {
+      test('erf', () => {
+        expect(expr.evaluate('erf(0)')).toBe(0);
+        expect(expr.evaluate('erf(INFINITY)')).toBeCloseTo(1, 4);
+        const r = expr.evaluate('erf(1)');
+        expect(r).toBeCloseTo(0.8427008, 4);
+      });
+
+      test('lgamma', () => {
+        expect(expr.evaluate('lgamma(1)')).toBeCloseTo(0, 5);
+        expect(expr.evaluate('lgamma(2)')).toBeCloseTo(0, 5);
+      });
+
+      test('beta', () => {
+        expect(expr.evaluate('beta(1, 1)')).toBeCloseTo(1, 5);
+        expect(expr.evaluate('beta(2, 3)')).toBeCloseTo(1 / 12, 5);
+      });
+    });
+
+    describe('Numeric Helpers', () => {
+      test('hypot', () => {
+        expect(expr.evaluate('hypot(3, 4)')).toBe(5);
+        expect(expr.evaluate('hypot()')).toBe(0);
+      });
+
+      test('cbrt', () => {
+        expect(expr.evaluate('cbrt(8)')).toBe(2);
+        expect(expr.evaluate('cbrt(-27)')).toBe(-3);
+      });
+
+      test('log2', () => {
+        expect(expr.evaluate('log2(8)')).toBe(3);
+      });
+
+      test('log1p', () => {
+        expect(expr.evaluate('log1p(0)')).toBe(0);
+        expect(expr.evaluate('log1p(1)')).toBeCloseTo(Math.LN2, 10);
+      });
+
+      test('expm1', () => {
+        expect(expr.evaluate('expm1(0)')).toBe(0);
+        expect(expr.evaluate('expm1(1)')).toBeCloseTo(Math.E - 1, 10);
+      });
+    });
+
+    describe('Bitwise', () => {
+      test('bitAnd', () => {
+        expect(expr.evaluate('bitAnd(5, 3)')).toBe(1);
+        expect(expr.evaluate('bitAnd(8, 7)')).toBe(0);
+      });
+
+      test('bitOr', () => {
+        expect(expr.evaluate('bitOr(5, 3)')).toBe(7);
+      });
+
+      test('bitXor', () => {
+        expect(expr.evaluate('bitXor(5, 3)')).toBe(6);
+      });
+
+      test('bitNot', () => {
+        expect(expr.evaluate('bitNot(0)')).toBe(-1);
+        expect(expr.evaluate('bitNot(-1)')).toBe(0);
+      });
+    });
+  });
+
+  describe('Expression Chaining', () => {
+    test('chain evaluate returns final result', () => {
+      const c = expr.chain();
+      c.evaluate('2 + 2');
+      c.evaluate('ans * 3');
+      expect(c.done()).toBe(12);
+    });
+
+    test('chain is mutable', () => {
+      const c = expr.chain();
+      expect(c.evaluate('10 + 5')).toBe(c);
+      expect(c.setVariable('x', 100)).toBe(c);
+    });
+
+    test('chain setVariable works', () => {
+      const c = expr.chain();
+      c.setVariable('x', 25);
+      expect(c.evaluate('sqrt(x)').done()).toBe(5);
+    });
+
+    test('chain compile works', () => {
+      const c = expr.chain();
+      const fn = c.compile('a * b');
+      expect(fn({ a: 6, b: 7 })).toBe(42);
+    });
+
+    test('chain with scope', () => {
+      const c = expr.chain();
+      c.setVariable('base', 10);
+      c.evaluate('base + 5', { base: 100 });
+      expect(c.done()).toBe(105);
+    });
+
+    test('chain reusable', () => {
+      const c = expr.chain();
+      c.evaluate('1 + 1');
+      c.done();
+      c.evaluate('ans + 1');
+      expect(c.done()).toBe(3);
+    });
+  });
 });

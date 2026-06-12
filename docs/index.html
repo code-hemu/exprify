@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exprify</title>
+  <link rel="stylesheet" href="style/index.css" />
+</head>
+
+<body>
+  <nav>
+    <span class="brand">Exprify</span>
+    <a href="#install">Install</a>
+    <a href="#api">API</a>
+    <a href="#features">Features</a>
+    <a href="functions.html">Functions</a>
+    <a href="playground.html">Playground</a>
+    <a href="../README.md">GitHub</a>
+  </nav>
+  <div class="container">
+
+    <h1><span>Exprify</span> — Math Expression Parser &amp; Evaluator</h1>
+    <p>A powerful math expression parser and evaluator for JavaScript with runtime data-type checking, arbitrary-precision arithmetic, matrices, symbolic algebra, and more.</p>
+
+    <h2 id="install">Installation</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>npm</h3>
+        <pre>npm install exprify</pre>
+      </div>
+      <div class="card">
+        <h3>CDN</h3>
+        <pre>&lt;script src="https://unpkg.com/exprify"&gt;&lt;/script&gt;</pre>
+      </div>
+    </div>
+
+    <h2 id="api">API Reference</h2>
+
+    <h3>new Exprify()</h3>
+    <p>Creates a new expression engine instance with its own variable and function stores.</p>
+    <pre><span class="kw">import</span> Exprify <span class="kw">from</span> <span class="str">'exprify'</span>;
+<span class="kw">const</span> expr = <span class="kw">new</span> Exprify();</pre>
+
+    <h3>.evaluate(expr, scope?)</h3>
+    <p>Parses and evaluates an expression string. Returns the result (number, string, array, object, etc.).</p>
+    <pre>expr.evaluate(<span class="str">'2 + 2 * 3'</span>);         <span class="cm">// 8</span>
+expr.evaluate(<span class="str">'x ^ 2'</span>, { x: <span class="num">5</span> }); <span class="cm">// scope override</span></pre>
+
+    <h3>.compile(expr)</h3>
+    <p>Compiles an expression into a reusable function. Cached internally.</p>
+    <pre><span class="kw">const</span> fn = expr.compile(<span class="str">'a * b + c'</span>);
+fn({ a: <span class="num">2</span>, b: <span class="num">3</span>, c: <span class="num">1</span> }); <span class="cm">// 7</span></pre>
+
+    <h3>.parse(expr)</h3>
+    <p>Returns <code>{ tokens, ast }</code> — the token array and AST for an expression.</p>
+
+    <h3>.setVariable(name, value) / .getVariable(name)</h3>
+    <p>Set or retrieve persistent variables.</p>
+    <pre>expr.setVariable(<span class="str">'x'</span>, <span class="num">42</span>);
+expr.getVariable(<span class="str">'x'</span>); <span class="cm">// 42</span></pre>
+
+    <h3>.addFunction(name, fn)</h3>
+    <p>Register a custom function for use in expressions.</p>
+    <pre>expr.addFunction(<span class="str">'double'</span>, x => x * <span class="num">2</span>);
+expr.evaluate(<span class="str">'double(21)'</span>); <span class="cm">// 42</span></pre>
+
+    <h3>.exportState() / .importState(state)</h3>
+    <p>Serialize and restore the engine state (variables, functions, units).</p>
+    <pre><span class="kw">const</span> state = expr.exportState();
+expr.importState(state);</pre>
+
+    <h3>.chain()</h3>
+    <p>Returns a fluent Chain object for chained evaluation. Each step stores its result as <code>ans</code> for the next step.</p>
+    <pre><span class="kw">const</span> c = expr.chain();
+c.evaluate(<span class="str">'2 + 2'</span>)           <span class="cm">// ans = 4</span>
+ .evaluate(<span class="str">'ans * 10'</span>)       <span class="cm">// ans = 40</span>
+ .evaluate(<span class="str">'ans / 2'</span>);       <span class="cm">// ans = 20</span>
+c.done();                        <span class="cm">// 20</span></pre>
+
+    <h2 id="features">Features</h2>
+
+    <h3>Arithmetic</h3>
+    <p>Standard operators: <code>+ - * / ^ %</code>, parentheses, implicit multiplication, unary plus/minus.</p>
+    <pre>expr.evaluate(<span class="str">'2 + 3 * 4 ^ 2'</span>); <span class="cm">// 50</span></pre>
+
+    <h3>Variables &amp; Assignments</h3>
+    <pre>expr.evaluate(<span class="str">'x = 10'</span>);
+expr.evaluate(<span class="str">'y = x * 2'</span>);    <span class="cm">// 20</span></pre>
+
+    <h3>Inline Functions</h3>
+    <pre>expr.evaluate(<span class="str">'f(x) = x ^ 2 + 1'</span>);
+expr.evaluate(<span class="str">'f(5)'</span>);            <span class="cm">// 26</span></pre>
+
+    <h3>Unit Conversion</h3>
+    <pre>expr.evaluate(<span class="str">'2 inch to cm'</span>);   <span class="cm">// 5.08 cm</span>
+expr.evaluate(<span class="str">'5 cm + 2 inch'</span>);</pre>
+
+    <h3>Matrices</h3>
+    <pre>expr.evaluate(<span class="str">'m = [1, 2; 3, 4]'</span>);
+expr.evaluate(<span class="str">'det(m)'</span>);            <span class="cm">// -2</span>
+expr.evaluate(<span class="str">'inverse(m)'</span>);</pre>
+
+    <h3>Fractions</h3>
+    <pre>expr.evaluate(<span class="str">'fraction(1, 3) + fraction(1, 6)'</span>); <span class="cm">// "1/2"</span></pre>
+
+    <h3>Arbitrary Precision (BigNumber)</h3>
+    <pre>expr.evaluate(<span class="str">'bignumber("0.1") + bignumber("0.2")'</span>); <span class="cm">// "0.3"</span>
+expr.evaluate(<span class="str">'bignumber("1.2e500")'</span>);                <span class="cm">// "1.2e+500"</span></pre>
+
+    <h3>Symbolic Algebra</h3>
+    <pre>expr.evaluate(<span class="str">'simplify("x^2 + 2x + 1")'</span>);
+expr.evaluate(<span class="str">'expand("(x+1)^2")'</span>);
+expr.evaluate(<span class="str">'factor("x^2 - 5x + 6")'</span>);</pre>
+
+    <h3>Calculus</h3>
+    <pre>expr.evaluate(<span class="str">'derivative("x^3", "x")'</span>);  <span class="cm">// "3x^2"</span>
+expr.evaluate(<span class="str">'integral("x^2", 0, 1)'</span>);     <span class="cm">// 0.3333</span></pre>
+
+    <h3>Statistics</h3>
+    <pre>expr.evaluate(<span class="str">'mean(1, 2, 3, 4, 5)'</span>);   <span class="cm">// 3</span>
+expr.evaluate(<span class="str">'std(1, 2, 3, 4, 5)'</span>);    <span class="cm">// 1.5811</span></pre>
+
+    <h3>Expression Chaining</h3>
+    <pre><span class="kw">const</span> c = expr.chain();
+c.evaluate(<span class="str">'2 + 2'</span>)
+ .evaluate(<span class="str">'ans * 10'</span>)
+ .evaluate(<span class="str">'ans + bignumber("0.5")'</span>);
+c.done(); <span class="cm">// "40.5"</span></pre>
+
+    <h3>Degree Trig</h3>
+    <pre>expr.evaluate(<span class="str">'sind(90)'</span>);  <span class="cm">// 1</span>
+expr.evaluate(<span class="str">'cosd(0)'</span>);   <span class="cm">// 1</span>
+expr.evaluate(<span class="str">'tand(45)'</span>);  <span class="cm">// 1</span></pre>
+
+    <h3>State Serialization</h3>
+    <pre><span class="kw">const</span> state = expr.exportState();
+<span class="kw">const</span> expr2 = <span class="kw">new</span> Exprify();
+expr2.importState(state);</pre>
+
+  </div>
+  <div class="footer">
+    Exprify - <a href="https://github.com/code-hemu/exprify">GitHub</a>
+  </div>
+</body>
+
+</html>

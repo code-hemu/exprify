@@ -1,0 +1,172 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font: 16px/1.6 system-ui, -apple-system, sans-serif;
+  background: #f8f9fa;
+  color: #333;
+}
+
+nav {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 16px 40px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+nav a {
+  color: #a0c4ff;
+  text-decoration: none;
+}
+
+nav a:hover {
+  color: #fff;
+}
+
+nav .brand {
+  font-weight: 700;
+  font-size: 18px;
+  color: #e94560;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+h1 {
+  font-size: 2.2em;
+  margin-bottom: 8px;
+}
+
+h1 span {
+  color: #e94560;
+}
+
+h2 {
+  font-size: 1.5em;
+  margin: 40px 0 12px;
+  border-bottom: 2px solid #e94560;
+  padding-bottom: 4px;
+}
+
+h3 {
+  font-size: 1.15em;
+  margin: 24px 0 8px;
+  color: #16213e;
+}
+
+p,
+li {
+  margin-bottom: 8px;
+}
+
+code {
+  background: #e8e8ee;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 14px;
+  margin: 12px 0;
+}
+
+pre .cm {
+  color: #6a9955;
+}
+
+pre .kw {
+  color: #c586c0;
+}
+
+pre .fn {
+  color: #dcdcaa;
+}
+
+pre .str {
+  color: #ce9178;
+}
+
+pre .num {
+  color: #b5cea8;
+}
+
+pre .op {
+  color: #d4d4d4;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background: #16213e;
+  color: #fff;
+  font-size: 14px;
+}
+
+tr:hover td {
+  background: #f0f0f6;
+}
+
+.badge {
+  display: inline-block;
+  background: #e94560;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+ul {
+  padding-left: 20px;
+}
+
+.footer {
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  padding: 40px 24px;
+  border-top: 1px solid #ddd;
+  margin-top: 40px;
+}

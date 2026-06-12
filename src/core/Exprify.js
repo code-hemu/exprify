@@ -783,10 +783,18 @@ class exprify {
    * @param {object} [scope]
    */
   evaluate(expr, scope = {}) {
+    return formatResult(this._evaluateRaw(expr, scope));
+  }
+
+  /**
+   * @param {string} expr
+   * @param {object} [scope]
+   */
+  _evaluateRaw(expr, scope = {}) {
     const { ast } = this.parse(expr);
     const ctx = this._createContext();
     const mergedCtx = Object.keys(scope).length > 0 ? ctx.withScope(scope) : ctx;
-    return formatResult(evaluateAST(ast, mergedCtx));
+    return evaluateAST(ast, mergedCtx);
   }
 
   /**
@@ -836,6 +844,36 @@ class exprify {
       }
     }
     return this;
+  }
+
+  chain() {
+    return new Chain(this);
+  }
+}
+
+class Chain {
+  /** @param {exprify} exprifyInstance */
+  constructor(exprifyInstance) {
+    this._expr = exprifyInstance;
+    this._rawResult = undefined;
+  }
+
+  evaluate(expr, scope = {}) {
+    this._rawResult = this._expr._evaluateRaw(expr, { ...scope, ans: this._rawResult });
+    return this;
+  }
+
+  setVariable(name, value) {
+    this._expr.setVariable(name, value);
+    return this;
+  }
+
+  compile(expr) {
+    return this._expr.compile(expr);
+  }
+
+  done() {
+    return formatResult(this._rawResult);
   }
 }
 
