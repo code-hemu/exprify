@@ -1,4 +1,3 @@
-// @ts-check
 export function createContext({ variables, functions, units, evaluate }) {
   if (!variables) {
     throw new Error('Variable store missing');
@@ -18,6 +17,7 @@ export function createContext({ variables, functions, units, evaluate }) {
     functions: functions,
     units: units,
     evaluate,
+
     withScope(scope = {}) {
       const tempVars = {
         ...variables.all?.(),
@@ -28,8 +28,8 @@ export function createContext({ variables, functions, units, evaluate }) {
         evaluate,
         units,
         variables: {
-          get: (k) => tempVars[k],
-          set: (k, v) => (tempVars[k] = v),
+          get: (/** @type {string | number} */ k) => tempVars[k],
+          set: (/** @type {string | number} */ k, /** @type {any} */ v) => (tempVars[k] = v),
           all: () => tempVars,
         },
       });

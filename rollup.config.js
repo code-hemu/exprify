@@ -32,9 +32,9 @@ function removeComment() {
           );
 
           let code = fs.readFileSync(filePath, 'utf-8');
-
-          code = code.replace(/\/\/# sourceMappingURL=.*$/gm, '');
-
+          code = code
+            .replace(/^\s*\/\/\s*@ts-check\s*$/gm, '')
+            .replace(/\/\/# sourceMappingURL=.*$/gm, '');
           fs.writeFileSync(filePath, code);
         }
       }

@@ -1,23 +1,22 @@
-// @ts-check
-const isValidNumberPair = (a, b) =>
+const isValidNumberPair = (/** @type {any} */ a, /** @type {any} */ b) =>
   typeof a === typeof b && (typeof a === 'number' || typeof a === 'bigint');
 
 export const mathOperations = Object.freeze({
-  power: function (a, b) {
+  power: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       return a ** b;
     }
     throw new Error('Invalid types for ^');
   },
 
-  multiply: function (a, b) {
+  multiply: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       return a * b;
     }
     throw new Error('Invalid types for *');
   },
 
-  divide: function (a, b) {
+  divide: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       if (b === 0) {
         throw new Error('Division by zero');
@@ -27,7 +26,7 @@ export const mathOperations = Object.freeze({
     throw new Error('Invalid types for /');
   },
 
-  add: function (a, b) {
+  add: function (/** @type {string} */ a, /** @type {string} */ b) {
     if (isValidNumberPair(a, b)) {
       return a + b;
     }
@@ -36,14 +35,15 @@ export const mathOperations = Object.freeze({
     }
     throw new Error('Invalid types for +');
   },
-  subtract: function (a, b) {
+
+  subtract: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       return a - b;
     }
     throw new Error('Invalid types for -');
   },
 
-  modulus: function (a, b) {
+  modulus: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       return a % b;
     }

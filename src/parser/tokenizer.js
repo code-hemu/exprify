@@ -1,23 +1,41 @@
-// @ts-check
+/** @param {string | any[]} expr */
 export function tokenize(expr, context = {}) {
   const tokens = [];
   let current = '';
   let quote = '';
 
   const operators = ['+', '-', '*', '/', '%', '^', '=', '>', '<', '!', '&', '|'];
-  const multiOps = ['==', '>=', '<=', '&&', '||', '+=', '-=', '*=', '/=', '%=', '?.', '??', '|>'];
+  // Two-char operators checked before single-char to avoid ambiguity (e.g., == vs =)
+  const multiOps = [
+    '==',
+    '>=',
+    '<=',
+    '&&',
+    '||',
+    '+=',
+    '-=',
+    '*=',
+    '/=',
+    '%=',
+    '?.',
+    '??',
+    '|>',
+    '->',
+  ];
 
   const parentheses = '()';
   const comma = ',';
   const semicolon = ';';
   const keywords = ['to', 'in'];
-  // const functions = context.functions?.getAllFunctionsName?.() || [];
+
   const units = context.units?.getAllUnitsFlat?.() || [];
+  const isIdentifier = (/** @type {string} */ s) => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s);
 
-  const isIdentifier = (s) => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(s);
-
+  /**
+   * @param {any} str
+   * @param {number} charIndex
+   */
   function getContext(str, charIndex) {
-    // 1. Extract all alphanumeric words into an array
     const words = str.match(/[a-z0-9]+/gi) || [];
 
     // 2. Identify the current character and the one immediately before it
@@ -26,13 +44,13 @@ export function tokenize(expr, context = {}) {
 
     // 3. Find the word that contains the current charIndex
     let start = charIndex;
-    // Move pointer back to the start of the current word
+
     while (start > 0 && /[a-z0-9]/i.test(str[start - 1])) {
       start--;
     }
 
     let end = charIndex;
-    // Move pointer forward to the end of the current word
+
     while (end < str.length && /[a-z0-9]/i.test(str[end])) {
       end++;
     }
@@ -56,7 +74,9 @@ export function tokenize(expr, context = {}) {
     };
   }
 
-  const isUnaryContext = (prev) =>
+  const isUnaryContext = (
+    /** @type {{ type: string; value: any; pos: number; } | { type: string; value: string; pos?: undefined; } | { type: string; value?: undefined; pos?: undefined; } | { type: string; pos: number; value?: undefined; }} */ prev
+  ) =>
     !prev ||
     prev.type === 'Operator' ||
     prev.type === 'UnaryOperator' ||
@@ -66,7 +86,7 @@ export function tokenize(expr, context = {}) {
     prev.type === 'Comma' ||
     prev.type === 'Ternary';
 
-  const flushCurrent = (nextChar, index) => {
+  const flushCurrent = (/** @type {string | null} */ nextChar, /** @type {number} */ index) => {
     if (!current) {
       return;
     }
@@ -256,7 +276,7 @@ export function tokenize(expr, context = {}) {
       continue;
     }
 
-    // only treat ':' as ternary IF previous token was '?'
+    // Colon after '?' is ternary separator; otherwise standalone (range, object key)
     if (char === ':') {
       flushCurrent(char, i);
       const prev = tokens[tokens.length - 1];
@@ -269,7 +289,15 @@ export function tokenize(expr, context = {}) {
       continue;
     }
 
-    // dot
+    // Three dots form the spread operator (...)
+    if (char === '.' && next === '.' && expr[i + 2] === '.') {
+      flushCurrent(char, i);
+      tokens.push({ type: 'Spread', pos: i });
+      i += 2;
+      continue;
+    }
+
+    // Dot between digits is a decimal separator, not property access
     if (char === '.' && /\d/.test(current) && /\d/.test(next)) {
       current += char;
       continue;
@@ -281,6 +309,7 @@ export function tokenize(expr, context = {}) {
       continue;
     }
 
+    // operators
     if (operators.includes(char)) {
       flushCurrent(char, i);
 
@@ -379,7 +408,7 @@ export function tokenize(expr, context = {}) {
     merged.push(t);
   }
 
-  // implicit multiplication
+  // Insert implicit * between tokens where multiplication is implied (e.g., "2x" -> "2*x", ")(a)" -> ")*(a)")
   const final = [];
   for (let i = 0; i < merged.length; i++) {
     const a = merged[i];

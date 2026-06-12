@@ -423,4 +423,344 @@ describe('Exprify Engine - Extended Tests', () => {
       expect(() => expr.evaluate('cot(0)')).toThrow();
     });
   });
+
+  describe('Linear Algebra - Matrix Operations', () => {
+    test('transpose 2x2', () => {
+      const result = expr.evaluate('transpose([[1, 2], [3, 4]])');
+      expect(result).toBe('{"exprify":"DenseMatrix","data":[[1,3],[2,4]],"size":[2,2]}');
+    });
+
+    test('inverse 2x2', () => {
+      const result = expr.evaluate('inverse([[1, 2], [3, 4]])');
+      expect(result).toBe('{"exprify":"DenseMatrix","data":[[-2,1],[1.5,-0.5]],"size":[2,2]}');
+    });
+
+    test('trace', () => {
+      expect(expr.evaluate('trace([[1, 2], [3, 4]])')).toBe(5);
+    });
+
+    test('rank', () => {
+      expect(expr.evaluate('rank([[1, 2], [3, 4]])')).toBe(2);
+    });
+
+    test('rank singular', () => {
+      expect(expr.evaluate('rank([[1, 2], [2, 4]])')).toBe(1);
+    });
+
+    test('rref', () => {
+      const result = expr.evaluate('rref([[1, 2, 3], [4, 5, 6]])');
+      expect(result).toBe('{"exprify":"DenseMatrix","data":[[1,0,-1],[0,1,2]],"size":[2,3]}');
+    });
+
+    test('minor', () => {
+      expect(expr.evaluate('minor([[1, 2], [3, 4]], 0, 0)')).toBe(4);
+    });
+
+    test('cofactor', () => {
+      expect(expr.evaluate('cofactor([[1, 2], [3, 4]], 0, 0)')).toBe(4);
+    });
+
+    test('cofactor sign', () => {
+      expect(expr.evaluate('cofactor([[1, 2], [3, 4]], 0, 1)')).toBe(-3);
+    });
+  });
+
+  describe('Linear Algebra - Vector Operations', () => {
+    test('cross product', () => {
+      expect(expr.evaluate('cross([1, 0, 0], [0, 1, 0])')).toBe('[0,0,1]');
+    });
+
+    test('normalize', () => {
+      const result = expr.evaluate('normalize([3, 4])');
+      const parsed = JSON.parse(result);
+      expect(parsed[0]).toBeCloseTo(0.6, 10);
+      expect(parsed[1]).toBeCloseTo(0.8, 10);
+    });
+
+    test('angle between vectors', () => {
+      const result = expr.evaluate('angle([1, 0], [0, 1])');
+      expect(result).toBeCloseTo(Math.PI / 2, 10);
+    });
+
+    test('projection', () => {
+      expect(expr.evaluate('projection([3, 4], [1, 0])')).toBe(3);
+    });
+  });
+
+  describe('Linear Algebra - Matrix Constructors', () => {
+    test('identity', () => {
+      const result = expr.evaluate('identity(3)');
+      expect(result).toBe(
+        '{"exprify":"DenseMatrix","data":[[1,0,0],[0,1,0],[0,0,1]],"size":[3,3]}'
+      );
+    });
+
+    test('eye alias', () => {
+      const result = expr.evaluate('eye(2)');
+      expect(result).toBe('{"exprify":"DenseMatrix","data":[[1,0],[0,1]],"size":[2,2]}');
+    });
+
+    test('zeros', () => {
+      const result = expr.evaluate('zeros(2, 3)');
+      expect(result).toBe('{"exprify":"DenseMatrix","data":[[0,0,0],[0,0,0]],"size":[2,3]}');
+    });
+
+    test('ones', () => {
+      const result = expr.evaluate('ones(2, 2)');
+      expect(result).toBe('{"exprify":"DenseMatrix","data":[[1,1],[1,1]],"size":[2,2]}');
+    });
+
+    test('diag', () => {
+      const result = expr.evaluate('diag([1, 2, 3])');
+      expect(result).toBe(
+        '{"exprify":"DenseMatrix","data":[[1,0,0],[0,2,0],[0,0,3]],"size":[3,3]}'
+      );
+    });
+  });
+
+  describe('Linear Algebra - Advanced Decompositions', () => {
+    test('cholesky 2x2', () => {
+      const result = expr.evaluate('cholesky([[4, 2], [2, 3]])');
+      expect(result).toBe(
+        '{"exprify":"DenseMatrix","data":[[2,0],[1,1.4142135623730951]],"size":[2,2]}'
+      );
+    });
+
+    test('eig 2x2', () => {
+      const result = expr.evaluate('eig([[1, 2], [2, 1]])');
+      const parsed = JSON.parse(result);
+      expect(parsed.values).toEqual([3, -1]);
+    });
+
+    test('svd 2x2', () => {
+      const result = expr.evaluate('svd([[1, 0], [0, 2]])');
+      const parsed = JSON.parse(result);
+      expect(parsed.S.data[0][0]).toBeCloseTo(2, 5);
+      expect(parsed.S.data[1][1]).toBeCloseTo(1, 5);
+    });
+  });
+
+  describe('Linear Algebra - Matrix Arithmetic', () => {
+    test('matrix addition', () => {
+      expect(expr.evaluate('[[1, 2], [3, 4]] + [[5, 6], [7, 8]]')).toBe('6\t8\n10\t12');
+    });
+
+    test('matrix subtraction', () => {
+      expect(expr.evaluate('[[5, 6], [7, 8]] - [[1, 2], [3, 4]]')).toBe('4\t4\n4\t4');
+    });
+
+    test('matrix multiplication', () => {
+      expect(expr.evaluate('[[1, 2], [3, 4]] * [[5, 6], [7, 8]]')).toBe('19\t22\n43\t50');
+    });
+
+    test('scalar * matrix', () => {
+      expect(expr.evaluate('3 * [[1, 2], [3, 4]]')).toBe('3\t6\n9\t12');
+    });
+
+    test('matrix * scalar', () => {
+      expect(expr.evaluate('[[1, 2], [3, 4]] * 2')).toBe('2\t4\n6\t8');
+    });
+
+    test('matrix power', () => {
+      expect(expr.evaluate('[[1, 1], [1, 0]] ^ 3')).toBe('3\t2\n2\t1');
+    });
+  });
+
+  describe('Linear Algebra - Edge Cases', () => {
+    test('inverse of singular throws', () => {
+      expect(() => expr.evaluate('inverse([[1, 2], [2, 4]])')).toThrow();
+    });
+
+    test('matrix dimension mismatch on add throws', () => {
+      expect(() => expr.evaluate('[[1, 2]] + [[1, 2, 3]]')).toThrow();
+    });
+
+    test('matrix power zero returns identity', () => {
+      expect(expr.evaluate('[[1, 2], [3, 4]] ^ 0')).toBe('1\t0\n0\t1');
+    });
+
+    test('normalize zero vector throws', () => {
+      expect(() => expr.evaluate('normalize([0, 0])')).toThrow();
+    });
+
+    test('cholesky non-positive-definite throws', () => {
+      expect(() => expr.evaluate('cholesky([[-1, 0], [0, 1]])')).toThrow();
+    });
+  });
+
+  describe('String Utilities', () => {
+    test('split', () => {
+      expect(expr.evaluate('split("a,b,c", ",")')).toBe('["a","b","c"]');
+    });
+
+    test('join', () => {
+      expect(expr.evaluate('join(["a", "b", "c"], ", ")')).toBe('a, b, c');
+    });
+
+    test('upper', () => {
+      expect(expr.evaluate('upper("hello")')).toBe('HELLO');
+    });
+
+    test('lower', () => {
+      expect(expr.evaluate('lower("HELLO")')).toBe('hello');
+    });
+
+    test('trim', () => {
+      expect(expr.evaluate('trim("  hi  ")')).toBe('hi');
+    });
+
+    test('replace', () => {
+      expect(expr.evaluate('replace("hello world", "world", "there")')).toBe('hello there');
+    });
+
+    test('substring', () => {
+      expect(expr.evaluate('substring("hello", 1, 4)')).toBe('ell');
+    });
+  });
+
+  describe('Constants', () => {
+    test('PHI', () => {
+      expect(expr.evaluate('PHI')).toBeCloseTo(1.618, 3);
+    });
+
+    test('TAU', () => {
+      expect(expr.evaluate('TAU')).toBeCloseTo(6.283, 3);
+    });
+
+    test('INFINITY', () => {
+      expect(expr.evaluate('INFINITY')).toBe(Infinity);
+    });
+
+    test('NaN', () => {
+      expect(expr.evaluate('NaN')).toBeNaN();
+    });
+  });
+
+  describe('Array Utilities (map / filter)', () => {
+    test('map with function name', () => {
+      expect(expr.evaluate('map([1, 4, 9], "sqrt")')).toBe('[1,2,3]');
+    });
+
+    test('filter with function name', () => {
+      expect(expr.evaluate('filter([1, 2, 3, 4, 5], "isPrime")')).toBe('[2,3,5]');
+    });
+  });
+
+  describe('Calculus', () => {
+    test('integral of x^2 from 0 to 1', () => {
+      const result = expr.evaluate('integral("x^2", 0, 1)');
+      expect(result).toBeCloseTo(1 / 3, 2);
+    });
+
+    test('sigma of n from 1 to 10', () => {
+      expect(expr.evaluate('sigma("n", 1, 10, "n")')).toBe(55);
+    });
+
+    test('sigma of n^2 from 1 to 5', () => {
+      expect(expr.evaluate('sigma("n", 1, 5, "n^2")')).toBe(55);
+    });
+
+    test('pi of n from 1 to 5', () => {
+      expect(expr.evaluate('pi("n", 1, 5, "n")')).toBe(120);
+    });
+
+    test('substitute x+1 at x=5', () => {
+      expect(expr.evaluate('substitute("x + 1", "x", 5)')).toBe(6);
+    });
+
+    test('limit of 1/x as x approaches infinity (right side)', () => {
+      const result = expr.evaluate('limit("1/x", "x", 1000000, "right")');
+      expect(result).toBeCloseTo(0, 4);
+    });
+  });
+
+  describe('Range Operator', () => {
+    test('simple range 1:5', () => {
+      expect(expr.evaluate('1:5')).toBe('[1,2,3,4,5]');
+    });
+
+    test('range assigned to variable', () => {
+      const result = expr.evaluate('r = 3:7');
+      expect(result).toBe('[3,4,5,6,7]');
+    });
+  });
+
+  describe('Lambda Expressions', () => {
+    test('lambda x -> x^2', () => {
+      const sq = expr.evaluate('x -> x^2');
+      expect(typeof sq).toBe('function');
+      expect(sq(5)).toBe(25);
+    });
+
+    test('map with lambda', () => {
+      const result = expr.evaluate('map([1, 2, 3], x -> x^2)');
+      expect(result).toBe('[1,4,9]');
+    });
+
+    test('filter with lambda', () => {
+      const exprify = new Exprify();
+      exprify.addFunction('isBig', (x) => x > 2);
+      const result = exprify.evaluate('filter([1, 2, 3, 4], "isBig")');
+      expect(result).toBe('[3,4]');
+    });
+  });
+
+  describe('Compound Assignment', () => {
+    test('a += 5', () => {
+      const exprify = new Exprify();
+      exprify.evaluate('a = 10');
+      expect(exprify.evaluate('a += 5')).toBe(15);
+      expect(exprify.getVariable('a')).toBe(15);
+    });
+
+    test('a -= 3', () => {
+      const exprify = new Exprify();
+      exprify.evaluate('a = 10');
+      expect(exprify.evaluate('a -= 3')).toBe(7);
+    });
+
+    test('a *= 2', () => {
+      const exprify = new Exprify();
+      exprify.evaluate('a = 10');
+      expect(exprify.evaluate('a *= 2')).toBe(20);
+    });
+
+    test('a /= 4', () => {
+      const exprify = new Exprify();
+      exprify.evaluate('a = 12');
+      expect(exprify.evaluate('a /= 4')).toBe(3);
+    });
+  });
+
+  describe('Spread Operator', () => {
+    test('spread in function call', () => {
+      expect(expr.evaluate('max(...[1, 5, 3])')).toBe(5);
+    });
+
+    test('spread with other args', () => {
+      expect(expr.evaluate('max(10, ...[1, 5, 3], 7)')).toBe(10);
+    });
+  });
+
+  describe('Symbolic', () => {
+    test('expand (x+1)^2', () => {
+      const result = expr.evaluate('expand("(x+1)^2")');
+      expect(result).toBe('x^2 + 2x + 1');
+    });
+
+    test('factor x^2 - 5x + 6', () => {
+      const result = expr.evaluate('factor("x^2 - 5x + 6")');
+      expect(result).toBe('(x - 2)(x - 3)');
+    });
+
+    test('solve x^2 - 4 = 0', () => {
+      const result = expr.evaluate('solve("x^2 - 4 = 0")');
+      expect(result).toBe('[-2,2]');
+    });
+
+    test('solve linear 2x - 8 = 0', () => {
+      const result = expr.evaluate('solve("2x - 8 = 0")');
+      expect(result).toBe('[4]');
+    });
+  });
 });

@@ -1,5 +1,5 @@
-// @ts-check
 export function createFunctionRegistry(initial = {}) {
+  // Object.create(null) avoids prototype pollution (no inherited properties)
   const store = Object.create(null);
 
   for (const key in initial) {
@@ -12,7 +12,11 @@ export function createFunctionRegistry(initial = {}) {
     getAllFunctionsName() {
       return Object.keys(store);
     },
-    // register new formula
+
+    /**
+     * @param {string} name
+     * @param {any} fn
+     */
     register(name, fn) {
       if (typeof name !== 'string' || !name) {
         throw new Error('Formula name must be a non-empty string');
@@ -25,34 +29,37 @@ export function createFunctionRegistry(initial = {}) {
       store[name] = fn;
     },
 
-    // get formula
+    /**
+     * @param {string} name
+     */
     get(name) {
       return store[name];
     },
 
-    // check existence
+    /**
+     * @param {any} name
+     */
     has(name) {
       return Object.prototype.hasOwnProperty.call(store, name);
     },
 
-    // remove formula
+    /**
+     * @param {string | number} name
+     */
     remove(name) {
       delete store[name];
     },
 
-    // list all
     all() {
       return { ...store };
     },
 
-    // clear registry
     clear() {
       for (const key in store) {
         delete store[key];
       }
     },
 
-    // extend multiple
     extend(formulas = {}) {
       for (const name in formulas) {
         if (typeof formulas[name] === 'function') {
@@ -61,7 +68,6 @@ export function createFunctionRegistry(initial = {}) {
       }
     },
 
-    // clone (for scoped instances)
     clone() {
       return createFunctionRegistry(store);
     },

@@ -1,11 +1,10 @@
-// @ts-check
+/** @param {string | any[]} tokens */
 export function buildAST(tokens) {
   let current = 0;
 
   const peek = () => tokens[current];
   const consume = () => tokens[current++];
-
-  const match = (type, value) => {
+  const match = (/** @type {string} */ type, /** @type {string | undefined} */ value) => {
     const t = peek();
     if (!t) {
       return false;
@@ -30,7 +29,7 @@ export function buildAST(tokens) {
       start = parseExpression();
     }
 
-    if (match('Colon')) {
+    if (match('Colon', undefined)) {
       let end = null;
 
       if (!(peek()?.type === 'Comma' || peek()?.type === 'ArrayEnd')) {
@@ -47,7 +46,6 @@ export function buildAST(tokens) {
     return start;
   };
 
-  /* ================= PRIMARY ================= */
   function parsePrimary() {
     const token = consume();
     if (!token) {
@@ -90,27 +88,28 @@ export function buildAST(tokens) {
 
           return expr;
         }
+
       // falls through
 
       case 'ArrayStart': {
         const rows = [];
         let currentRow = [];
 
-        if (!match('ArrayEnd')) {
+        if (!match('ArrayEnd', undefined)) {
           while (true) {
             currentRow.push(parseExpression());
 
-            if (match('Comma')) {
+            if (match('Comma', undefined)) {
               continue;
             }
 
-            if (match('Semicolon')) {
+            if (match('Semicolon', undefined)) {
               rows.push(currentRow);
               currentRow = [];
               continue;
             }
 
-            if (match('ArrayEnd')) {
+            if (match('ArrayEnd', undefined)) {
               rows.push(currentRow);
               break;
             }
@@ -139,7 +138,7 @@ export function buildAST(tokens) {
       case 'BlockStart': {
         const properties = [];
 
-        if (!match('BlockEnd')) {
+        if (!match('BlockEnd', undefined)) {
           do {
             const keyToken = consume();
 
@@ -147,7 +146,7 @@ export function buildAST(tokens) {
               throw new Error('Invalid object key');
             }
 
-            if (!match('Colon')) {
+            if (!match('Colon', undefined)) {
               throw new Error("Expected ':' after key");
             }
 
@@ -157,9 +156,9 @@ export function buildAST(tokens) {
               key: keyToken.value,
               value,
             });
-          } while (match('Comma'));
+          } while (match('Comma', undefined));
 
-          if (!match('BlockEnd')) {
+          if (!match('BlockEnd', undefined)) {
             throw new Error(`Expected '}' at ${current}`);
           }
         }
@@ -171,20 +170,19 @@ export function buildAST(tokens) {
     throw new Error(`Unexpected token: ${JSON.stringify(token)}`);
   }
 
-  /* ================= MEMBER ================= */
   function parseMember() {
     let object = parsePrimary();
 
     while (true) {
-      if (match('ArrayStart')) {
+      if (match('ArrayStart', undefined)) {
         const selectors = [];
 
-        if (!match('ArrayEnd')) {
+        if (!match('ArrayEnd', undefined)) {
           do {
             selectors.push(parseSliceOrIndex());
-          } while (match('Comma'));
+          } while (match('Comma', undefined));
 
-          if (!match('ArrayEnd')) {
+          if (!match('ArrayEnd', undefined)) {
             throw new Error(`Expected ']' at ${current}`);
           }
         }
@@ -197,7 +195,7 @@ export function buildAST(tokens) {
         continue;
       }
 
-      if (match('Dot')) {
+      if (match('Dot', undefined)) {
         const property = consume();
 
         if (property.type !== 'Identifier') {
@@ -231,19 +229,23 @@ export function buildAST(tokens) {
     return object;
   }
 
-  /* ================= CALL ================= */
   function parseCallChain() {
     let expr = parseMember();
 
     while (peek()?.type === 'Parenthesis' && peek()?.value === '(') {
-      consume(); // '('
+      consume();
 
       const args = [];
 
       if (!(peek()?.type === 'Parenthesis' && peek()?.value === ')')) {
         do {
-          args.push(parseExpression());
-        } while (match('Comma'));
+          if (match('Spread', undefined)) {
+            const arg = parseExpression();
+            args.push({ type: 'SpreadElement', argument: arg });
+          } else {
+            args.push(parseExpression());
+          }
+        } while (match('Comma', undefined));
       }
 
       if (!match('Parenthesis', ')')) {
@@ -260,9 +262,8 @@ export function buildAST(tokens) {
     return expr;
   }
 
-  /* ================= UNARY ================= */
   function parseUnary() {
-    if (match('UnaryOperator')) {
+    if (match('UnaryOperator', undefined)) {
       const operator = tokens[current - 1].value;
 
       return {
@@ -275,7 +276,6 @@ export function buildAST(tokens) {
     return parseCallChain();
   }
 
-  /* ================= POWER ================= */
   function parsePower() {
     const left = parseUnary();
 
@@ -292,7 +292,6 @@ export function buildAST(tokens) {
     return left;
   }
 
-  /* ================= MULT ================= */
   function parseMultiplication() {
     let left = parsePower();
 
@@ -311,7 +310,6 @@ export function buildAST(tokens) {
     return left;
   }
 
-  /* ================= ADD ================= */
   function parseAddition() {
     let left = parseMultiplication();
 
@@ -330,7 +328,6 @@ export function buildAST(tokens) {
     return left;
   }
 
-  /* ================= UNIT CONVERSION ================= */
   function parseUnitConversion() {
     const left = parseAddition();
 
@@ -353,7 +350,6 @@ export function buildAST(tokens) {
     return left;
   }
 
-  /* ================= COMPARISON ================= */
   function parseComparison() {
     let left = parseUnitConversion();
 
@@ -378,7 +374,6 @@ export function buildAST(tokens) {
     return left;
   }
 
-  /* ================= LOGICAL ================= */
   function parseLogical() {
     let left = parseComparison();
 
@@ -397,7 +392,6 @@ export function buildAST(tokens) {
     return left;
   }
 
-  /* ================= NULLISH ================= */
   function parseNullish() {
     let left = parseLogical();
 
@@ -415,7 +409,6 @@ export function buildAST(tokens) {
     return left;
   }
 
-  /* ================= TERNARY ================= */
   function parseTernary() {
     const test = parseNullish();
 
@@ -436,10 +429,49 @@ export function buildAST(tokens) {
       };
     }
 
+    if (match('Colon', undefined)) {
+      const end = parseNullish();
+
+      return {
+        type: 'RangeExpression',
+        start: test,
+        end,
+      };
+    }
+
     return test;
   }
 
-  /* ================= PIPELINE ================= */
+  function parseLambda() {
+    const left = parsePipeline();
+
+    if (match('Operator', '->')) {
+      let params;
+      if (left.type === 'Identifier') {
+        params = [left.name];
+      } else if (left.type === 'ArrayExpression') {
+        params = left.elements.map((/** @type {{ type: string; name: any; }} */ el) => {
+          if (el.type !== 'Identifier') {
+            throw new Error('Lambda parameter must be an identifier');
+          }
+          return el.name;
+        });
+      } else {
+        throw new Error('Invalid lambda parameter');
+      }
+
+      const body = parseLambda();
+
+      return {
+        type: 'ArrowFunctionExpression',
+        params,
+        body,
+      };
+    }
+
+    return left;
+  }
+
   function parsePipeline() {
     let left = parseTernary();
 
@@ -456,9 +488,8 @@ export function buildAST(tokens) {
     return left;
   }
 
-  /* ================= ASSIGNMENT ================= */
   function parseAssignment() {
-    const left = parsePipeline();
+    const left = parseLambda();
 
     if (
       match('Operator', '=') ||
@@ -469,10 +500,11 @@ export function buildAST(tokens) {
     ) {
       const operator = tokens[current - 1].value;
 
+      // f(a,b) = expr: treat as function definition, not assignment
       if (left.type === 'CallExpression') {
         const isFunctionTarget =
           left.callee?.type === 'Identifier' &&
-          left.arguments.every((arg) => arg.type === 'Identifier');
+          left.arguments.every((/** @type {{ type: string; }} */ arg) => arg.type === 'Identifier');
 
         if (!isFunctionTarget) {
           throw new Error('Invalid function definition');
@@ -487,7 +519,7 @@ export function buildAST(tokens) {
             type: 'Identifier',
             name: left.callee.name,
           },
-          params: left.arguments.map((arg) => arg.name),
+          params: left.arguments.map((/** @type {{ name: any; }} */ arg) => arg.name),
           right,
         };
       }
@@ -513,7 +545,6 @@ export function buildAST(tokens) {
     return left;
   }
 
-  /* ================= ENTRY ================= */
   function parseExpression() {
     return parseAssignment();
   }

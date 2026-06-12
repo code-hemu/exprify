@@ -1,4 +1,6 @@
-// @ts-check
+/**
+ * @param {{ get: (arg0: any) => any; has: (arg0: any) => any; }} fnRegistry
+ */
 export function createFunctionExecutor(fnRegistry, options = {}) {
   if (!fnRegistry) {
     throw new Error('Function registry is required');
@@ -8,12 +10,15 @@ export function createFunctionExecutor(fnRegistry, options = {}) {
     strict: options.strict ?? true,
   };
 
-  /* ================= EXECUTE ================= */
-
+  /**
+   * @param {any} name
+   * @param {any} args
+   * @param {any} _context
+   */
   function execute(name, args = [], _context) {
     const fn = fnRegistry.get(name);
 
-    /* ----- NOT FOUND ----- */
+    // not found
     if (!fn) {
       if (config.strict) {
         throw new Error(`Unknown function: ${name}`);
@@ -21,11 +26,12 @@ export function createFunctionExecutor(fnRegistry, options = {}) {
       return undefined;
     }
 
-    /* ----- VALIDATE ARGS ----- */
+    // validate args
     if (!Array.isArray(args)) {
       throw new Error(`Arguments for "${name}" must be an array`);
     }
 
+    // execute
     try {
       return fn(...args);
     } catch (err) {
@@ -51,14 +57,14 @@ export function createFunctionExecutor(fnRegistry, options = {}) {
     }
   }
 
-  /* ================= EXISTS ================= */
-
+  /**
+   * @param {any} name
+   */
   function exists(name) {
     return fnRegistry.has(name);
   }
 
-  /* ================= API ================= */
-
+  // API
   return {
     execute,
     safeExecute,

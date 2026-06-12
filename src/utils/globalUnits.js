@@ -1,6 +1,5 @@
 // @ts-check
 export const globalUnits = {
-  // Length
   length: {
     m: { value: 1, unit: 'meter', symbol: 'm' },
     cm: { value: 0.01, unit: 'centimeter', symbol: 'cm' },
@@ -207,7 +206,6 @@ export const globalUnits = {
     grad: { value: 0.9, unit: 'grad', symbol: 'grad', note: '1 grad = 0.9°' },
   },
   radiation: {
-    // Absorbed Dose
     Gy: { value: 1, unit: 'gray', symbol: 'Gy', note: 'Absorbed dose: 1 Gy = 1 J/kg' },
     mGy: { value: 0.001, unit: 'milligray', symbol: 'mGy' },
     rad: { value: 0.01, unit: 'rad', symbol: 'rad', note: '1 rad = 0.01 Gy' },

@@ -1,4 +1,3 @@
-// @ts-check
 const validVarName = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 
 export function createVarStore(initial = {}) {
@@ -9,8 +8,11 @@ export function createVarStore(initial = {}) {
   }
 
   return {
+    /**
+     * @param {string} name
+     * @param {number | undefined} value
+     */
     set(name, value, { override = true } = {}) {
-      // Name validation
       if (typeof name !== 'string' || !name) {
         throw new Error('Variable name must be a non-empty string');
       }
@@ -32,39 +34,41 @@ export function createVarStore(initial = {}) {
       store[name] = value;
     },
 
-    //get variable
+    /**
+     * @param {string | number} name
+     */
     get(name) {
       return store[name];
     },
 
-    // check existence
+    /**
+     * @param {any} name
+     */
     has(name) {
       return Object.prototype.hasOwnProperty.call(store, name);
     },
 
-    // remove variable
+    /**
+     * @param {string | number} name
+     */
     remove(name) {
       delete store[name];
     },
 
-    // get all variables (snapshot)
     all() {
       return { ...store };
     },
 
-    // clear all
     clear() {
       store = Object.create(null);
     },
 
-    // merge multiple variables
     merge(obj = {}) {
       for (const key in obj) {
         store[key] = obj[key];
       }
     },
 
-    // clone store (for scoped instances)
     clone() {
       return createVarStore(store);
     },

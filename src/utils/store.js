@@ -1,9 +1,7 @@
-// @ts-check
 export function createUnitsStore(initial = {}) {
   let units = { ...initial };
 
-  // ---------- Helpers ----------
-
+  // Helpers
   function getAllUnitsFlat() {
     const result = new Set();
 
@@ -20,7 +18,6 @@ export function createUnitsStore(initial = {}) {
 
           // Avoid duplicate like "m" vs "meter"
           if (unitLower !== keyLower) {
-            // Optional: only single-word units
             if (unitLower.split(/\s+/).length === 1) {
               result.add(unitLower);
             }
@@ -42,6 +39,9 @@ export function createUnitsStore(initial = {}) {
     return Array.from(result);
   }
 
+  /**
+   * @param {string} input
+   */
   function findUnit(input) {
     input = input.toLowerCase();
 
@@ -62,8 +62,11 @@ export function createUnitsStore(initial = {}) {
     return null;
   }
 
-  // ---------- Core Convert ----------
-
+  /**
+   * @param {number} value
+   * @param {any} fromUnit
+   * @param {any} toUnit
+   */
   function convert(value, fromUnit, toUnit) {
     const from = findUnit(fromUnit);
     const to = findUnit(toUnit);
@@ -86,33 +89,40 @@ export function createUnitsStore(initial = {}) {
     return { value: result, unit: to.key };
   }
 
-  // ---------- Public API ----------
-
+  // Public API
   return {
     // Get all units
     getUnits: () => units,
 
-    // Replace all units
-    setUnits: (newUnits) => {
+    setUnits: (/** @type {{}} */ newUnits) => {
       units = { ...newUnits };
     },
 
-    // Update single type
-    updateType: (type, data) => {
+    updateType: (/** @type {string | number} */ type, /** @type {any} */ data) => {
       units[type] = { ...units[type], ...data };
     },
 
-    // Add new unit
-    addUnit: (type, key, unitObj) => {
+    addUnit: (
+      /** @type {string | number} */ type,
+      /** @type {string | number} */ key,
+      /** @type {any} */ unitObj
+    ) => {
       if (!units[type]) {
         units[type] = {};
       }
       units[type][key] = unitObj;
     },
+    // Unit-aware arithmetic: unify operands to same unit type, then apply operator
+    /**
+     * @param {string} op
+     * @param {{ unit: any; value: any; }} left
+     * @param {{ unit: any; value: number; }} right
+     */
     compute(op, left, right) {
-      const isUnit = (v) => v && typeof v === 'object' && 'value' in v && 'unit' in v;
+      const isUnit = (/** @type {any} */ v) =>
+        v && typeof v === 'object' && 'value' in v && 'unit' in v;
 
-      const apply = (a, b) => {
+      const apply = (/** @type {any} */ a, /** @type {any} */ b) => {
         switch (op) {
           case '+':
             return a + b;
@@ -159,14 +169,14 @@ export function createUnitsStore(initial = {}) {
         return { value: result, unit: left.unit };
       }
 
-      // ================= LEFT UNIT =================
+      // LEFT UNIT
       if (isUnit(left) && !isUnit(right)) {
         const result = apply(left.value, right);
 
         return { value: result, unit: left.unit };
       }
 
-      // ================= RIGHT UNIT =================
+      // RIGHT UNIT
       if (!isUnit(left) && isUnit(right)) {
         const result = apply(left, right.value);
 
@@ -177,10 +187,10 @@ export function createUnitsStore(initial = {}) {
         return { value: result, unit: right.unit };
       }
 
-      // ================= NORMAL =================
+      // NORMAL
       return apply(left, right);
     },
-    // Convert
+
     convert,
 
     // Search helpers

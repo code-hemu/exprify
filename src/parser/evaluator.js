@@ -1,23 +1,24 @@
-// @ts-check
-import { unwrapDenseMatrix, wrapDenseMatrix } from '../utils/matrix.js';
+import { unwrapDenseMatrix, wrapDenseMatrix, isDenseMatrixWrapper } from '../utils/matrix.js';
 
+/** @param {any } node*/
 export function evaluateAST(node, context = {}) {
   const vars = context.variables;
   const fns = context.functions;
   const units = context.units;
 
-  const isUnitObj = (v) => v && typeof v === 'object' && 'value' in v && 'unit' in v;
+  const isUnitObj = (/** @type {any} */ v) =>
+    v && typeof v === 'object' && 'value' in v && 'unit' in v;
+  const isComplex = (/** @type {any} */ v) => v && typeof v === 'object' && 're' in v && 'im' in v;
+  const isSliceNode = (/** @type {any} */ v) =>
+    v && typeof v === 'object' && v.type === 'SliceExpression';
+  const isMatrix = (/** @type {any[]} */ v) =>
+    Array.isArray(v) && v.length > 0 && v.every(Array.isArray);
+  const isMatrixLike = (/** @type {any} */ v) => isMatrix(v) || isDenseMatrixWrapper(v);
 
-  const isComplex = (v) => v && typeof v === 'object' && 're' in v && 'im' in v;
-
-  const isSliceNode = (v) => v && typeof v === 'object' && v.type === 'SliceExpression';
-
-  const isMatrix = (v) => Array.isArray(v) && v.length > 0 && v.every(Array.isArray);
-
-  const normalizeMatrix = (value) => {
+  const normalizeMatrix = (/** @type {any[]} */ value) => {
     value = unwrapDenseMatrix(value);
     if (isMatrix(value)) {
-      return value.map((row) => [...row]);
+      return value.map((/** @type {any} */ row) => [...row]);
     }
     if (Array.isArray(value)) {
       return [value];
@@ -25,7 +26,7 @@ export function evaluateAST(node, context = {}) {
     throw new Error('Expected matrix-compatible value');
   };
 
-  const toOneBasedIndex = (value) => {
+  const toOneBasedIndex = (/** @type {unknown} */ value) => {
     if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
       throw new Error('Matrix indices must be positive integers');
     }
@@ -33,7 +34,10 @@ export function evaluateAST(node, context = {}) {
     return value - 1;
   };
 
-  const resolveSelector = (selector, contextLength) => {
+  const resolveSelector = (
+    /** @type {{ start: null | undefined; end: null | undefined; }} */ selector,
+    /** @type {number} */ contextLength
+  ) => {
     if (isSliceNode(selector)) {
       const startValue =
         selector.start === null || selector.start === undefined
@@ -60,12 +64,12 @@ export function evaluateAST(node, context = {}) {
     return [toOneBasedIndex(evaluateAST(selector, context))];
   };
 
-  const indexMatrix = (matrix, selectors) => {
+  const indexMatrix = (/** @type {any} */ matrix, /** @type {string | any[]} */ selectors) => {
     const target = normalizeMatrix(matrix);
 
     if (selectors.length === 1) {
       const rowIndexes = resolveSelector(selectors[0], target.length);
-      const rows = rowIndexes.map((rowIndex) => {
+      const rows = rowIndexes.map((/** @type {number} */ rowIndex) => {
         if (rowIndex >= target.length) {
           throw new Error('Row index out of range');
         }
@@ -78,12 +82,12 @@ export function evaluateAST(node, context = {}) {
     const rowIndexes = resolveSelector(selectors[0], target.length);
     const colIndexes = resolveSelector(selectors[1], target[0]?.length || 0);
 
-    const values = rowIndexes.map((rowIndex) => {
+    const values = rowIndexes.map((/** @type {number} */ rowIndex) => {
       if (rowIndex >= target.length) {
         throw new Error('Row index out of range');
       }
 
-      return colIndexes.map((colIndex) => {
+      return colIndexes.map((/** @type {number} */ colIndex) => {
         if (colIndex >= target[rowIndex].length) {
           throw new Error('Column index out of range');
         }
@@ -100,15 +104,19 @@ export function evaluateAST(node, context = {}) {
     }
 
     if (colIndexes.length === 1) {
-      return values.map((row) => [row[0]]);
+      return values.map((/** @type {any[]} */ row) => [row[0]]);
     }
 
     return values;
   };
 
-  const assignMatrixIndex = (matrix, selectors, value) => {
+  const assignMatrixIndex = (
+    /** @type {any[]} */ matrix,
+    /** @type {string | any[]} */ selectors,
+    /** @type {any} */ value
+  ) => {
     const target = isMatrix(matrix)
-      ? matrix.map((row) => [...row])
+      ? matrix.map((/** @type {any} */ row) => [...row])
       : Array.isArray(matrix)
         ? [matrix.slice()]
         : [];
@@ -130,20 +138,26 @@ export function evaluateAST(node, context = {}) {
         throw new Error('Assigned row count does not match slice');
       }
 
-      rowIndexes.forEach((rowIndex, index) => {
-        target[rowIndex] = [...rowsValue[index]];
-      });
+      rowIndexes.forEach(
+        (/** @type {string | number} */ rowIndex, /** @type {string | number} */ index) => {
+          target[rowIndex] = [...rowsValue[index]];
+        }
+      );
 
       return {
         updatedMatrix: target,
         selectionResult:
           rowIndexes.length === 1
             ? [target[rowIndexes[0]]]
-            : rowIndexes.map((rowIndex) => [target[rowIndex]]),
+            : rowIndexes.map((/** @type {string | number} */ rowIndex) => [target[rowIndex]]),
       };
     }
 
-    const maxCols = Math.max(...target.map((row) => row.length), 0, 1);
+    const maxCols = Math.max(
+      ...target.map((/** @type {string | any[]} */ row) => row.length),
+      0,
+      1
+    );
     const colIndexes = resolveSelector(colSelector, maxCols);
     const normalizedValue = normalizeMatrix(value);
 
@@ -151,32 +165,58 @@ export function evaluateAST(node, context = {}) {
       throw new Error('Assigned row count does not match matrix slice');
     }
 
-    normalizedValue.forEach((row, _rowOffset) => {
+    normalizedValue.forEach((/** @type {string | any[]} */ row, /** @type {any} */ _rowOffset) => {
       if (row.length !== colIndexes.length) {
         throw new Error('Assigned column count does not match matrix slice');
       }
     });
 
-    rowIndexes.forEach((rowIndex, rowOffset) => {
-      if (!target[rowIndex]) {
-        target[rowIndex] = [];
-      }
+    rowIndexes.forEach(
+      (/** @type {string | number} */ rowIndex, /** @type {string | number} */ rowOffset) => {
+        if (!target[rowIndex]) {
+          target[rowIndex] = [];
+        }
 
-      colIndexes.forEach((colIndex, colOffset) => {
-        target[rowIndex][colIndex] = normalizedValue[rowOffset][colOffset];
-      });
-    });
+        colIndexes.forEach(
+          (/** @type {string | number} */ colIndex, /** @type {string | number} */ colOffset) => {
+            target[rowIndex][colIndex] = normalizedValue[rowOffset][colOffset];
+          }
+        );
+      }
+    );
 
     return {
       updatedMatrix: target,
       selectionResult:
         rowIndexes.length === 1
-          ? [colIndexes.map((colIndex) => target[rowIndexes[0]][colIndex])]
-          : rowIndexes.map((rowIndex) => colIndexes.map((colIndex) => target[rowIndex][colIndex])),
+          ? [
+              colIndexes.map(
+                (/** @type {string | number} */ colIndex) => target[rowIndexes[0]][colIndex]
+              ),
+            ]
+          : rowIndexes.map((/** @type {string | number} */ rowIndex) =>
+              colIndexes.map(
+                (/** @type {string | number} */ colIndex) => target[rowIndex][colIndex]
+              )
+            ),
     };
   };
 
-  const multiplyMatrices = (left, right) => {
+  const isScalar = (/** @type {any} */ v) => typeof v === 'number' || typeof v === 'bigint';
+
+  const multiplyMatrices = (/** @type {any} */ left, /** @type {any} */ right) => {
+    if (isScalar(left)) {
+      const b = normalizeMatrix(right);
+      return b.map((/** @type {any[]} */ row) =>
+        row.map((/** @type {number} */ v) => Number(left) * v)
+      );
+    }
+    if (isScalar(right)) {
+      const a = normalizeMatrix(left);
+      return a.map((/** @type {any[]} */ row) =>
+        row.map((/** @type {number} */ v) => v * Number(right))
+      );
+    }
     const a = normalizeMatrix(left);
     const b = normalizeMatrix(right);
 
@@ -184,14 +224,64 @@ export function evaluateAST(node, context = {}) {
       throw new Error('Matrix dimensions do not allow multiplication');
     }
 
-    return a.map((row) =>
-      b[0].map((_, colIndex) =>
-        row.reduce((sum, value, rowIndex) => sum + value * b[rowIndex][colIndex], 0)
+    return a.map((/** @type {any[]} */ row) =>
+      b[0].map((/** @type {any} */ _, /** @type {string | number} */ colIndex) =>
+        row.reduce(
+          (
+            /** @type {number} */ sum,
+            /** @type {number} */ value,
+            /** @type {string | number} */ rowIndex
+          ) => sum + value * b[rowIndex][colIndex],
+          0
+        )
       )
     );
   };
 
-  const toComplex = (value) => {
+  const addMatrices = (/** @type {any} */ left, /** @type {any} */ right) => {
+    const a = normalizeMatrix(left);
+    const b = normalizeMatrix(right);
+    if (a.length !== b.length || a[0].length !== b[0].length) {
+      throw new Error('Matrix dimensions must match for addition');
+    }
+    return a.map((/** @type {any[]} */ row, /** @type {string | number} */ i) =>
+      row.map((/** @type {any} */ v, /** @type {string | number} */ j) => v + b[i][j])
+    );
+  };
+
+  const subtractMatrices = (/** @type {any} */ left, /** @type {any} */ right) => {
+    const a = normalizeMatrix(left);
+    const b = normalizeMatrix(right);
+    if (a.length !== b.length || a[0].length !== b[0].length) {
+      throw new Error('Matrix dimensions must match for subtraction');
+    }
+    return a.map((/** @type {any[]} */ row, /** @type {string | number} */ i) =>
+      row.map((/** @type {number} */ v, /** @type {string | number} */ j) => v - b[i][j])
+    );
+  };
+
+  const identityMatrix = (/** @type {any} */ n) =>
+    Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
+
+  const powerMatrix = (/** @type {any} */ left, /** @type {any} */ right) => {
+    const a = normalizeMatrix(left);
+    if (a.length !== a[0].length) {
+      throw new Error('Matrix power requires a square matrix');
+    }
+    if (!Number.isInteger(right) || right < 0) {
+      throw new Error('Matrix power requires a non-negative integer exponent');
+    }
+    if (right === 0) {
+      return identityMatrix(a.length);
+    }
+    let result = a;
+    for (let i = 1; i < right; i++) {
+      result = multiplyMatrices(result, a);
+    }
+    return result;
+  };
+
+  const toComplex = (/** @type {any} */ value) => {
     if (isComplex(value)) {
       return value;
     }
@@ -201,21 +291,26 @@ export function evaluateAST(node, context = {}) {
     throw new Error('Complex arithmetic only supports numbers');
   };
 
-  const fromImaginary = (value) => ({ re: 0, im: value });
+  const fromImaginary = (/** @type {any} */ value) => ({ re: 0, im: value });
 
-  const simplifyComplex = (value) => (value.im === 0 ? value.re : value);
+  const simplifyComplex = (/** @type {{ re: any; im: any; }} */ value) =>
+    value.im === 0 ? value.re : value;
 
-  const createFunctionScope = (params, args) => {
+  const createFunctionScope = (/** @type {any[]} */ params, /** @type {any[]} */ args) => {
     const scopedValues = {};
 
-    params.forEach((param, index) => {
+    params.forEach((/** @type {string | number} */ param, /** @type {string | number} */ index) => {
       scopedValues[param] = args[index];
     });
 
     return scopedValues;
   };
 
-  const evalComplexBinary = (operator, left, right) => {
+  const evalComplexBinary = (
+    /** @type {any} */ operator,
+    /** @type {any} */ left,
+    /** @type {any} */ right
+  ) => {
     const a = toComplex(left);
     const b = toComplex(right);
 
@@ -246,10 +341,8 @@ export function evaluateAST(node, context = {}) {
     }
   };
 
-  /* ================= EVALUATOR ================= */
-
+  // EVALUATOR
   switch (node.type) {
-    /* ===== LITERAL ===== */
     case 'Literal':
       return node.value;
 
@@ -259,13 +352,39 @@ export function evaluateAST(node, context = {}) {
     case 'UnitLiteral':
       return { value: node.value, unit: node.unit };
 
-    /* ===== VARIABLE ===== */
+    // VARIABLE
     case 'Identifier':
       return vars.get(node.name);
 
-    /* ===== ASSIGNMENT ===== */
+    // Assignment with optional compound operator (+=, -=, *=, /=): read current, apply, write
     case 'AssignmentExpression': {
-      const value = evaluateAST(node.right, context);
+      let value;
+      if (node.operator !== '=') {
+        const current = vars.get(node.left.name);
+        const right = evaluateAST(node.right, context);
+        const op = node.operator.slice(0, -1);
+        switch (op) {
+          case '+':
+            value = current + right;
+            break;
+          case '-':
+            value = current - right;
+            break;
+          case '*':
+            value = current * right;
+            break;
+          case '/':
+            value = current / right;
+            break;
+          case '%':
+            value = current % right;
+            break;
+          default:
+            throw new Error(`Unknown compound operator ${node.operator}`);
+        }
+      } else {
+        value = evaluateAST(node.right, context);
+      }
 
       if (node.left.type === 'Identifier') {
         vars.set(node.left.name, value);
@@ -285,12 +404,13 @@ export function evaluateAST(node, context = {}) {
       throw new Error('Invalid assignment target');
     }
 
+    // User-defined function via f(a,b)=expr: closure evaluates body in a new scope with params bound
     case 'FunctionAssignmentExpression': {
       if (node.operator !== '=') {
         throw new Error(`Operator ${node.operator} is not supported for function definitions`);
       }
 
-      const fn = (...args) => {
+      const fn = (/** @type {any} */ ...args) => {
         const scopedContext = context.withScope(createFunctionScope(node.params, args));
         return evaluateAST(node.right, scopedContext);
       };
@@ -299,7 +419,7 @@ export function evaluateAST(node, context = {}) {
       return fn;
     }
 
-    /* ===== UNARY ===== */
+    // UNARY
     case 'UnaryExpression': {
       const val = evaluateAST(node.argument, context);
 
@@ -313,7 +433,7 @@ export function evaluateAST(node, context = {}) {
       throw new Error(`Unknown unary operator ${node.operator}`);
     }
 
-    /* ===== BINARY ===== */
+    // Dispatch order: unit arithmetic -> matrix arithmetic -> complex arithmetic -> scalar arithmetic
     case 'BinaryExpression': {
       const left = evaluateAST(node.left, context);
       const right = evaluateAST(node.right, context);
@@ -327,8 +447,23 @@ export function evaluateAST(node, context = {}) {
         return units.compute(node.operator, left, right);
       }
 
-      if (node.operator === '*' && (Array.isArray(left) || Array.isArray(right))) {
-        return multiplyMatrices(left, right);
+      if (
+        isMatrixLike(left) ||
+        isMatrixLike(right) ||
+        (node.operator === '*' && (Array.isArray(left) || Array.isArray(right)))
+      ) {
+        switch (node.operator) {
+          case '+':
+            return addMatrices(left, right);
+          case '-':
+            return subtractMatrices(left, right);
+          case '*':
+            return multiplyMatrices(left, right);
+          case '^':
+            return powerMatrix(left, right);
+          default:
+            throw new Error(`Operator ${node.operator} not supported for matrices`);
+        }
       }
 
       if (isComplex(left) || isComplex(right)) {
@@ -364,7 +499,7 @@ export function evaluateAST(node, context = {}) {
       throw new Error(`Unknown operator ${node.operator}`);
     }
 
-    /* ===== LOGICAL ===== */
+    // Short-circuit: && returns first falsy, || returns first truthy, ?? returns first non-nullish
     case 'LogicalExpression': {
       const left = evaluateAST(node.left, context);
 
@@ -383,17 +518,57 @@ export function evaluateAST(node, context = {}) {
       throw new Error(`Unknown logical operator ${node.operator}`);
     }
 
-    /* ===== FUNCTION CALL ===== */
+    // Range [start..end] inclusive: returns array of integers from floor(start) to floor(end)
+    case 'RangeExpression': {
+      const start = evaluateAST(node.start, context);
+      const end = evaluateAST(node.end, context);
+      if (typeof start !== 'number' || typeof end !== 'number') {
+        throw new Error('Range requires numeric bounds');
+      }
+      const result = [];
+      for (let i = Math.floor(start); i <= Math.floor(end); i++) {
+        result.push(i);
+      }
+      return result;
+    }
+
+    // Lambda: return a callable function evaluating the body with params bound in a new scope
+    case 'ArrowFunctionExpression': {
+      const fn = (/** @type {any[]} */ ...args) => {
+        const scopedContext = context.withScope(createFunctionScope(node.params, args));
+        return evaluateAST(node.body, scopedContext);
+      };
+      return fn;
+    }
+
+    // Function call: flatten spread (...array) arguments, then invoke
     case 'CallExpression': {
       const fnName = node.callee.name;
       const fn = fns.get(fnName);
 
-      const args = node.arguments.map((arg) => evaluateAST(arg, context));
+      const rawArgs = node.arguments.map((/** @type {{ type: string; argument: any; }} */ arg) => {
+        if (arg.type === 'SpreadElement') {
+          const val = evaluateAST(arg.argument, context);
+          if (!Array.isArray(val)) {
+            throw new Error('Spread operator requires an array');
+          }
+          return { spread: true, values: val };
+        }
+        return { spread: false, value: evaluateAST(arg, context) };
+      });
+      const args = [];
+      for (const arg of rawArgs) {
+        if (arg.spread) {
+          args.push(...arg.values);
+        } else {
+          args.push(arg.value);
+        }
+      }
 
       return fn(...args);
     }
 
-    /* ===== PIPELINE ===== */
+    // Pipeline: left value is passed as first argument to the right function/expression
     case 'PipelineExpression': {
       const leftVal = evaluateAST(node.left, context);
 
@@ -402,7 +577,10 @@ export function evaluateAST(node, context = {}) {
         const fnName = node.right.callee.name;
         const fn = fns.get(fnName);
 
-        const args = [leftVal, ...node.right.arguments.map((arg) => evaluateAST(arg, context))];
+        const args = [
+          leftVal,
+          ...node.right.arguments.map((/** @type {any} */ arg) => evaluateAST(arg, context)),
+        ];
 
         return fn(...args);
       }
@@ -415,7 +593,7 @@ export function evaluateAST(node, context = {}) {
       throw new Error('Invalid pipeline target');
     }
 
-    /* ===== UNIT CONVERSION ===== */
+    // Unit conversion: value fromUnit -> toUnit
     case 'UnitConversion': {
       const from = evaluateAST(node.from, context);
 
@@ -430,16 +608,17 @@ export function evaluateAST(node, context = {}) {
       return units.convert(from.value, from.unit, node.to);
     }
 
-    /* ===== ARRAY ===== */
+    // ARRAY
     case 'ArrayExpression':
-      return node.elements.map((el) => evaluateAST(el, context));
+      return node.elements.map((/** @type {any} */ el) => evaluateAST(el, context));
 
+    // Matrix/array indexing: target[selector1, selector2] with 1-based and slice support
     case 'IndexExpression': {
       const target = evaluateAST(node.object, context);
       return indexMatrix(target, node.selectors);
     }
 
-    /* ===== OBJECT ===== */
+    // OBJECT
     case 'ObjectExpression': {
       const obj = {};
       for (const p of node.properties) {
@@ -448,7 +627,7 @@ export function evaluateAST(node, context = {}) {
       return obj;
     }
 
-    /* ===== MEMBER ===== */
+    // Property access: obj.prop; optional chaining (?.) returns undefined if obj is null/undefined
     case 'MemberExpression': {
       const obj = evaluateAST(node.object, context);
 

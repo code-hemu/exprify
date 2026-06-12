@@ -1,12 +1,11 @@
-// @ts-check
-export const isDenseMatrixWrapper = (value) =>
+export const isDenseMatrixWrapper = (/** @type {any} */ value) =>
   value &&
   typeof value === 'object' &&
   value.exprify === 'DenseMatrix' &&
   'data' in value &&
   'size' in value;
 
-export const cloneMatrixData = (value) => {
+export const cloneMatrixData = (/** @type {any[]} */ value) => {
   if (Array.isArray(value)) {
     return value.map(cloneMatrixData);
   }
@@ -14,7 +13,7 @@ export const cloneMatrixData = (value) => {
   return value;
 };
 
-export const getMatrixSize = (data) => {
+export const getMatrixSize = (/** @type {any[]} */ data) => {
   if (Array.isArray(data) && data.every(Array.isArray)) {
     return [data.length, data[0]?.length || 0];
   }
@@ -26,16 +25,16 @@ export const getMatrixSize = (data) => {
   throw new Error('Matrix data must be an array');
 };
 
-export const wrapDenseMatrix = (data) => ({
+export const wrapDenseMatrix = (/** @type {any[][]} */ data) => ({
   exprify: 'DenseMatrix',
   data: cloneMatrixData(data),
   size: getMatrixSize(data),
 });
 
-export const unwrapDenseMatrix = (value) =>
+export const unwrapDenseMatrix = (/** @type {any} */ value) =>
   isDenseMatrixWrapper(value) ? cloneMatrixData(value.data) : value;
 
-export const serializeExprifyValue = (value) => {
+export const serializeExprifyValue = (/** @type {any} */ value) => {
   if (isDenseMatrixWrapper(value)) {
     return JSON.stringify(value);
   }
