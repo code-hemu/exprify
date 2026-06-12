@@ -2066,6 +2066,49 @@ function derivativeExpression(expression, variable) {
   return formatPolynomial(derived, variable);
 }
 
+function _gcd(a, b) {
+  a = Math.abs(a);
+  b = Math.abs(b);
+  while (b) {
+    [a, b] = [b, a % b];
+  }
+  return a;
+}
+
+function _gamma(n) {
+  if (n === 0) {
+    throw new Error('gamma(0) is undefined');
+  }
+  if (Number.isInteger(n) && n < 0) {
+    throw new Error('gamma() undefined for negative integers');
+  }
+  if (Number.isInteger(n) && n > 0) {
+    let r = 1;
+    for (let i = 2; i < n; i++) {r *= i;}
+    return r;
+  }
+  const g = 7;
+  const c = [
+    0.99999999999980993,
+    676.5203681218851,
+    -1259.1392167224028,
+    771.32342877765313,
+    -176.6150291621406,
+    12.507343278686905,
+    -0.13857109526572012,
+    9.9843695780195716e-6,
+    1.5056327351493116e-7,
+  ];
+  if (n < 0.5) {
+    return Math.PI / (Math.sin(Math.PI * n) * _gamma(1 - n));
+  }
+  n -= 1;
+  let x = c[0];
+  for (let i = 1; i < g + 2; i++) {x += c[i] / (n + i);}
+  const t = n + g + 0.5;
+  return Math.sqrt(2 * Math.PI) * t ** (n + 0.5) * Math.exp(-t) * x;
+}
+
 const internalFunctions = {
   max: (...args) => {
     if (!args.length) {
@@ -2199,6 +2242,214 @@ const internalFunctions = {
     }
     throw new Error('length() expects string or array');
   },
+
+  /* ================= STATISTICS ================= */
+
+  sum: (...args) => {
+    if (!args.length) {
+      throw new Error('sum() requires at least one argument');
+    }
+    return args.reduce((a, b) => a + b, 0);
+  },
+
+  prod: (...args) => {
+    if (!args.length) {
+      throw new Error('prod() requires at least one argument');
+    }
+    return args.reduce((a, b) => a * b, 1);
+  },
+
+  mean: (...args) => {
+    if (!args.length) {
+      throw new Error('mean() requires at least one argument');
+    }
+    return args.reduce((a, b) => a + b, 0) / args.length;
+  },
+
+  median: (...args) => {
+    if (!args.length) {
+      throw new Error('median() requires at least one argument');
+    }
+    const sorted = [...args].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  },
+
+  mode: (...args) => {
+    if (!args.length) {
+      throw new Error('mode() requires at least one argument');
+    }
+    const freq = new Map();
+    args.forEach((v) => freq.set(v, (freq.get(v) || 0) + 1));
+    let maxCount = 0;
+    let result = args[0];
+    for (const [val, count] of freq) {
+      if (count > maxCount) {
+        maxCount = count;
+        result = val;
+      }
+    }
+    return result;
+  },
+
+  std: (...args) => {
+    if (args.length < 2) {
+      throw new Error('std() requires at least two values');
+    }
+    const m = args.reduce((a, b) => a + b, 0) / args.length;
+    return Math.sqrt(args.reduce((sum, v) => sum + (v - m) ** 2, 0) / (args.length - 1));
+  },
+
+  variance: (...args) => {
+    if (args.length < 2) {
+      throw new Error('variance() requires at least two values');
+    }
+    const m = args.reduce((a, b) => a + b, 0) / args.length;
+    return args.reduce((sum, v) => sum + (v - m) ** 2, 0) / (args.length - 1);
+  },
+
+  range: (...args) => {
+    if (!args.length) {
+      throw new Error('range() requires at least one argument');
+    }
+    return Math.max(...args) - Math.min(...args);
+  },
+
+  /* ================= NUMBER THEORY ================= */
+
+  gcd: (a, b) => _gcd(a, b),
+
+  lcm: (a, b) => {
+    if (a === 0 || b === 0) {return 0;}
+    return Math.abs((a / _gcd(a, b)) * b);
+  },
+
+  factorial: (n) => {
+    if (!Number.isInteger(n) || n < 0) {
+      throw new Error('factorial() requires a non-negative integer');
+    }
+    if (n === 0 || n === 1) {return 1;}
+    let r = 1;
+    for (let i = 2; i <= n; i++) {r *= i;}
+    return r;
+  },
+
+  isPrime: (n) => {
+    if (!Number.isInteger(n) || n < 2) {return false;}
+    if (n === 2) {return true;}
+    if (n % 2 === 0) {return false;}
+    for (let i = 3; i * i <= n; i += 2) {
+      if (n % i === 0) {return false;}
+    }
+    return true;
+  },
+
+  primeFactors: (n) => {
+    if (!Number.isInteger(n) || n < 2) {
+      throw new Error('primeFactors() requires an integer >= 2');
+    }
+    const factors = [];
+    let m = n;
+    for (let i = 2; i * i <= m; i++) {
+      while (m % i === 0) {
+        factors.push(i);
+        m /= i;
+      }
+    }
+    if (m > 1) {factors.push(m);}
+    return factors;
+  },
+
+  fibonacci: (n) => {
+    if (!Number.isInteger(n) || n < 0) {
+      throw new Error('fibonacci() requires a non-negative integer');
+    }
+    if (n <= 1) {return n;}
+    let a = 0;
+    let b = 1;
+    for (let i = 2; i <= n; i++) {
+      const t = a + b;
+      a = b;
+      b = t;
+    }
+    return b;
+  },
+
+  /* ================= COMBINATORICS ================= */
+
+  nCr: (n, r) => {
+    if (!Number.isInteger(n) || !Number.isInteger(r) || n < 0 || r < 0) {
+      throw new Error('nCr() requires non-negative integers');
+    }
+    if (r > n) {return 0;}
+    if (r === 0 || r === n) {return 1;}
+    r = Math.min(r, n - r);
+    let result = 1;
+    for (let i = 1; i <= r; i++) {
+      result = (result * (n - r + i)) / i;
+    }
+    return result;
+  },
+
+  nPr: (n, r) => {
+    if (!Number.isInteger(n) || !Number.isInteger(r) || n < 0 || r < 0) {
+      throw new Error('nPr() requires non-negative integers');
+    }
+    if (r > n) {return 0;}
+    let result = 1;
+    for (let i = 0; i < r; i++) {
+      result *= n - i;
+    }
+    return result;
+  },
+
+  gamma: (n) => _gamma(n),
+
+  /* ================= EXTENDED TRIGONOMETRY ================= */
+
+  sinh: (x) => Math.sinh(x),
+
+  cosh: (x) => Math.cosh(x),
+
+  tanh: (x) => Math.tanh(x),
+
+  asinh: (x) => Math.asinh(x),
+
+  acosh: (x) => Math.acosh(x),
+
+  atanh: (x) => Math.atanh(x),
+
+  sec: (x) => {
+    const c = Math.cos(x);
+    if (Math.abs(c) < 1e-15) {
+      throw new Error('sec() undefined for this input');
+    }
+    return 1 / c;
+  },
+
+  csc: (x) => {
+    const s = Math.sin(x);
+    if (Math.abs(s) < 1e-15) {
+      throw new Error('csc() undefined for this input');
+    }
+    return 1 / s;
+  },
+
+  cot: (x) => {
+    const s = Math.sin(x);
+    if (Math.abs(s) < 1e-15) {
+      throw new Error('cot() undefined for this input');
+    }
+    return Math.cos(x) / s;
+  },
+
+  /* ================= ROUNDING VARIANTS ================= */
+
+  trunc: (x) => Math.trunc(x),
+
+  sign: (x) => Math.sign(x),
+
+  frac: (x) => x - Math.trunc(x),
 };
 
 // @ts-check
@@ -2732,12 +2983,14 @@ function buildAST(tokens) {
 
 // @ts-check
 
+const isComplex = (/** @type {any} */ value) =>
+  value && typeof value === 'object' && 're' in value && 'im' in value;
 
-const isComplex = (/** @type {any} */ value) => value && typeof value === 'object' && 're' in value && 'im' in value;
+const isUnitValue = (/** @type {any} */ value) =>
+  value && typeof value === 'object' && 'value' in value && 'unit' in value;
 
-const isUnitValue = (/** @type {any} */ value) => value && typeof value === 'object' && 'value' in value && 'unit' in value;
-
-const isMatrix = (/** @type {any} */ value) => Array.isArray(value) && value.length > 0 && value.every(Array.isArray);
+const isMatrix = (/** @type {any} */ value) =>
+  Array.isArray(value) && value.length > 0 && value.every(Array.isArray);
 
 const formatComplex = (/** @type {{ re: any; im: number; }} */ value) => {
   if (!isComplex(value)) {
@@ -2875,15 +3128,23 @@ class exprify {
       const keyToPowers = (/** @type {string} */ key) => Object.fromEntries(JSON.parse(key));
       const constPoly = (/** @type {number} */ value) => new Map([[polyKey({}), value]]);
       const varPoly = (/** @type {string} */ name) => new Map([[polyKey({ [name]: 1 }), 1]]);
-      const cleanPoly = (/** @type {Map<string, number>} */ poly) => new Map([...poly.entries()].filter(([, coeff]) => coeff !== 0));
-      const addPoly = (/** @type {Map<string, number>} */ a, /** @type {Map<string, number>} */ b, /** @type {number} */ sign = 1) => {
+      const cleanPoly = (/** @type {Map<string, number>} */ poly) =>
+        new Map([...poly.entries()].filter(([, coeff]) => coeff !== 0));
+      const addPoly = (
+        /** @type {Map<string, number>} */ a,
+        /** @type {Map<string, number>} */ b,
+        /** @type {number} */ sign = 1
+      ) => {
         const result = new Map(a);
         for (const [key, coeff] of b.entries()) {
           result.set(key, (result.get(key) || 0) + sign * coeff);
         }
         return cleanPoly(result);
       };
-      const multiplyPoly = (/** @type {Map<string, number>} */ a, /** @type {Map<string, number>} */ b) => {
+      const multiplyPoly = (
+        /** @type {Map<string, number>} */ a,
+        /** @type {Map<string, number>} */ b
+      ) => {
         const result = new Map();
         for (const [keyA, coeffA] of a.entries()) {
           const powersA = keyToPowers(keyA);
@@ -2906,15 +3167,30 @@ class exprify {
         }
         return result;
       };
-      const rational = (/** @type {Map<string, number>} */ num, /** @type {Map<string, number>} */ den = constPoly(1)) => ({ num, den });
-      const addRat = (/** @type {{ num: Map<string, number>; den: Map<string, number> }} */ a, /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ b, /** @type {number} */ sign = 1) =>
+      const rational = (
+        /** @type {Map<string, number>} */ num,
+        /** @type {Map<string, number>} */ den = constPoly(1)
+      ) => ({ num, den });
+      const addRat = (
+        /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ a,
+        /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ b,
+        /** @type {number} */ sign = 1
+      ) =>
         rational(
           addPoly(multiplyPoly(a.num, b.den), multiplyPoly(b.num, a.den), sign),
           multiplyPoly(a.den, b.den)
         );
-      const mulRat = (/** @type {{ num: Map<string, number>; den: Map<string, number> }} */ a, /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ b) => rational(multiplyPoly(a.num, b.num), multiplyPoly(a.den, b.den));
-      const divRat = (/** @type {{ num: Map<string, number>; den: Map<string, number> }} */ a, /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ b) => rational(multiplyPoly(a.num, b.den), multiplyPoly(a.den, b.num));
-      const negRat = (/** @type {{ num: Map<string, number>; den: Map<string, number> }} */ value) => rational(addPoly(new Map(), value.num, -1), value.den);
+      const mulRat = (
+        /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ a,
+        /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ b
+      ) => rational(multiplyPoly(a.num, b.num), multiplyPoly(a.den, b.den));
+      const divRat = (
+        /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ a,
+        /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ b
+      ) => rational(multiplyPoly(a.num, b.den), multiplyPoly(a.den, b.num));
+      const negRat = (
+        /** @type {{ num: Map<string, number>; den: Map<string, number> }} */ value
+      ) => rational(addPoly(new Map(), value.num, -1), value.den);
       const astToRat = (/** @type {any} */ node) => {
         switch (node.type) {
           case 'Literal':

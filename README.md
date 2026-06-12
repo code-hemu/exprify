@@ -260,14 +260,70 @@ expr.evaluate('leafCount(parse("{a: 22/7, b: 10^(1/2)}"))');
 
 ### Built-in Functions
 
-Common built-ins include:
-
-- `max`, `min`, `abs`, `round`, `floor`, `ceil`, `sqrt`, `pow`
-- `sin`, `cos`, `tan`, `asin`, `acos`, `atan`
-- `log`, `log10`, `exp`, `random`
-- `clamp`, `if`, `length`, `typeof`
-- `det`, `lsolve`, `lup`, `lyap`, `qr`, `polynomialRoot`
-- `simplify`, `derivative`, `rationalize`, `leafCount`, `parse`
+| Function | Description | Example | Output |
+|---|---|---|---|
+| `abs` | Absolute value | `abs(-5)` | `5` |
+| `round` | Round to nearest integer | `round(3.7)` | `4` |
+| `floor` | Round down | `floor(3.7)` | `3` |
+| `ceil` | Round up | `ceil(3.2)` | `4` |
+| `trunc` | Truncate toward zero | `trunc(3.7)` | `3` |
+| `sign` | Sign of number (-1, 0, 1) | `sign(-5)` | `-1` |
+| `frac` | Fractional part | `frac(3.14)` | `0.14` |
+| `sqrt` | Square root | `sqrt(16)` | `4` |
+| `pow` | Raise to power | `pow(2, 3)` | `8` |
+| `clamp` | Clamp value to range | `clamp(15, 0, 10)` | `10` |
+| `sin` | Sine (radians) | `sin(pi/2)` | `1` |
+| `cos` | Cosine (radians) | `cos(pi)` | `-1` |
+| `tan` | Tangent (radians) | `tan(pi/4)` | `1` |
+| `asin` | Arc sine | `asin(0)` | `0` |
+| `acos` | Arc cosine | `acos(1)` | `0` |
+| `atan` | Arc tangent | `atan(1)` | `0.7854` |
+| `sec` | Secant | `sec(pi/3)` | `2` |
+| `csc` | Cosecant | `csc(pi/2)` | `1` |
+| `cot` | Cotangent | `cot(pi/4)` | `1` |
+| `sinh` | Hyperbolic sine | `sinh(0)` | `0` |
+| `cosh` | Hyperbolic cosine | `cosh(0)` | `1` |
+| `tanh` | Hyperbolic tangent | `tanh(0)` | `0` |
+| `asinh` | Inverse hyperbolic sine | `asinh(0)` | `0` |
+| `acosh` | Inverse hyperbolic cosine | `acosh(1)` | `0` |
+| `atanh` | Inverse hyperbolic tangent | `atanh(0)` | `0` |
+| `log` | Natural logarithm | `log(e)` | `1` |
+| `log10` | Base-10 logarithm | `log10(100)` | `2` |
+| `exp` | Exponential (e^x) | `exp(0)` | `1` |
+| `max` | Maximum of values | `max(2, 5, 3)` | `5` |
+| `min` | Minimum of values | `min(2, 5, 3)` | `2` |
+| `sum` | Sum of values | `sum(1, 2, 3)` | `6` |
+| `prod` | Product of values | `prod(1, 2, 3)` | `6` |
+| `mean` | Arithmetic mean | `mean(1, 2, 3)` | `2` |
+| `median` | Median value | `median(1, 3, 2)` | `2` |
+| `mode` | Most frequent value | `mode(1, 2, 2, 3)` | `2` |
+| `std` | Sample standard deviation | `std(1, 2, 3)` | `1` |
+| `variance` | Sample variance | `variance(1, 2, 3)` | `1` |
+| `range` | Difference max - min | `range(1, 3, 5)` | `4` |
+| `gcd` | Greatest common divisor | `gcd(12, 18)` | `6` |
+| `lcm` | Least common multiple | `lcm(12, 18)` | `36` |
+| `factorial` | Factorial (n!) | `factorial(5)` | `120` |
+| `isPrime` | Primality test | `isPrime(17)` | `true` |
+| `primeFactors` | Prime factorization | `primeFactors(12)` | `[2,2,3]` |
+| `fibonacci` | Nth Fibonacci number | `fibonacci(10)` | `55` |
+| `nCr` | Combinations (n choose r) | `nCr(5, 2)` | `10` |
+| `nPr` | Permutations | `nPr(5, 2)` | `20` |
+| `gamma` | Gamma function | `gamma(5)` | `24` |
+| `det` | Matrix determinant | `det([-1,2;3,1])` | `-7` |
+| `lsolve` | Solve linear system | `lsolve([-2,3;2,1], [11,9])` | matrix JSON |
+| `lup` | LUP decomposition | `lup([[2,1];[1,4]])` | matrix JSON |
+| `lyap` | Solve Lyapunov equation | `lyap([[-2,0];[1,-4]], [[3,1];[1,3]])` | matrix JSON |
+| `qr` | QR decomposition | `qr([[1,-1,4];[1,4,-2];[1,4,2];[1,-1,0]])` | matrix JSON |
+| `polynomialRoot` | Find polynomial roots | `polynomialRoot(-6, 11, -6, 1)` | `[1,3,2]` |
+| `simplify` | Simplify polynomial | `simplify("x^2 + 2x^2")` | `3 * x^2` |
+| `derivative` | Differentiate polynomial | `derivative("x^3")` | `3 * x^2` |
+| `rationalize` | Rationalize expression | `rationalize("1/x + 1/(x+1)")` | `(2x + 1)/(x^2 + x)` |
+| `if` | Conditional | `if(1 < 2, "a", "b")` | `"a"` |
+| `length` | String or array length | `length("hello")` | `5` |
+| `typeof` | Type of value | `typeof(42)` | `"number"` |
+| `random` | Random number (0, 1) | `random()` | e.g. `0.374` |
+| `leafCount` | Count expression leaves | `leafCount("e^(i*pi)-1")` | `4` |
+| `parse` | Return expression string | `parse("a + b")` | `"a + b"` |
 
 ## Return Types
 
