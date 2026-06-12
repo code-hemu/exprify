@@ -9,3 +9,6 @@ coverage/
 
 # Build output
 dist
+
+# Temporary/utility scripts
+scripts/

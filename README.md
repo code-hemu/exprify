@@ -16,7 +16,7 @@ Exprify is a JavaScript expression parser and evaluator. It is made for math app
 [![Github Sponsor](https://img.shields.io/github/sponsors/code-hemu)](https://github.com/sponsors/code-hemu)
 
 
-## Features
+## Capabilities:
 
 - Math expression parsing and evaluation
 - Variables, functions, and lambdas
