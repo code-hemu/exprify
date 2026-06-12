@@ -1,11 +1,14 @@
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-import resolve from "@rollup/plugin-node-resolve";
-import commonjs from "@rollup/plugin-commonjs";
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 
-import terser from "@rollup/plugin-terser";
-import pkg from "./package.json";
+import terser from '@rollup/plugin-terser';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'));
 
 const short_banner = `/*! ${pkg.name} v${pkg.version} | * (c) ${new Date().getFullYear()} ${pkg.author} and contributors | ${pkg.license} License*/`;
 
@@ -19,62 +22,62 @@ const banner = `/*!
 
 function removeComment() {
   return {
-    name: "remove-sourcemap-comment",
+    name: 'remove-sourcemap-comment',
     writeBundle(outputOptions, bundle) {
       for (const fileName in bundle) {
-        if (fileName.endsWith(".js")) {
+        if (fileName.endsWith('.js')) {
           const filePath = path.join(
             outputOptions.dir || path.dirname(outputOptions.file),
             fileName
           );
 
-          let code = fs.readFileSync(filePath, "utf-8");
+          let code = fs.readFileSync(filePath, 'utf-8');
 
-          code = code.replace(/\/\/# sourceMappingURL=.*$/gm, "");
+          code = code.replace(/\/\/# sourceMappingURL=.*$/gm, '');
 
           fs.writeFileSync(filePath, code);
         }
       }
-    }
+    },
   };
 }
 
 export default [
   {
-    input: "src/index.js",
+    input: 'src/index.js',
     output: [
       {
-        file: "dist/exprify.esm.js",
-        format: "esm",
-        sourcemap: true
-      },
-      {
-        file: "dist/exprify.cjs.cjs",
-        format: "cjs",
+        file: 'dist/exprify.esm.js',
+        format: 'es',
         sourcemap: true,
-        exports: "default"
       },
       {
-        file: "dist/exprify.js",
-        format: "umd",
-        name: "Exprify",
+        file: 'dist/exprify.cjs.cjs',
+        format: 'cjs',
+        sourcemap: true,
+        exports: 'default',
+      },
+      {
+        file: 'dist/exprify.js',
+        format: 'umd',
+        name: 'Exprify',
         banner: banner,
         sourcemap: true,
         indent: true,
-        exports: "default"
-      }
+        exports: 'default',
+      },
     ],
-    plugins: [resolve(), commonjs(), removeComment()]
+    plugins: [resolve(), commonjs(), removeComment()],
   },
   {
-    input: "src/index.js",
+    input: 'src/index.js',
     output: {
-      file: "dist/exprify.min.js",
-      format: "umd",
-      name: "Exprify",
+      file: 'dist/exprify.min.js',
+      format: 'umd',
+      name: 'Exprify',
       sourcemap: true,
-      banner: short_banner
+      banner: short_banner,
     },
-    plugins: [resolve(), commonjs(), terser(), removeComment()]
-  }
+    plugins: [resolve(), commonjs(), terser(), removeComment()],
+  },
 ];

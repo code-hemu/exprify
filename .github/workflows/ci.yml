@@ -20,6 +20,7 @@ jobs:
         node-version:
           - 20
           - 22
+          - 24
 
     steps:
       - name: Checkout repository
@@ -37,5 +38,20 @@ jobs:
       - name: Build package
         run: npm run build
 
-      - name: Run tests
-        run: npm test
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run type check
+        run: npm run typecheck
+
+      - name: Check bundle size
+        run: npx size-limit
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.node-version }}
+          path: coverage/

@@ -1,8 +1,9 @@
+// @ts-check
 export function createFunctionRegistry(initial = {}) {
   const store = Object.create(null);
 
   for (const key in initial) {
-    if (typeof initial[key] === "function") {
+    if (typeof initial[key] === 'function') {
       store[key] = initial[key];
     }
   }
@@ -13,11 +14,11 @@ export function createFunctionRegistry(initial = {}) {
     },
     // register new formula
     register(name, fn) {
-      if (typeof name !== "string" || !name) {
-        throw new Error("Formula name must be a non-empty string");
+      if (typeof name !== 'string' || !name) {
+        throw new Error('Formula name must be a non-empty string');
       }
 
-      if (typeof fn !== "function") {
+      if (typeof fn !== 'function') {
         throw new Error(`Formula "${name}" must be callable`);
       }
 
@@ -54,7 +55,7 @@ export function createFunctionRegistry(initial = {}) {
     // extend multiple
     extend(formulas = {}) {
       for (const name in formulas) {
-        if (typeof formulas[name] === "function") {
+        if (typeof formulas[name] === 'function') {
           store[name] = formulas[name];
         }
       }
@@ -62,7 +63,7 @@ export function createFunctionRegistry(initial = {}) {
 
     // clone (for scoped instances)
     clone() {
-      return createFormulaRegistry(store);
-    }
+      return createFunctionRegistry(store);
+    },
   };
 }

@@ -1,2 +1,3 @@
-import Exprify from "./core/Exprify.js";
+// @ts-check
+import Exprify from './core/Exprify.js';
 export default Exprify;

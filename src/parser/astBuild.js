@@ -1,3 +1,4 @@
+// @ts-check
 export function buildAST(tokens) {
   let current = 0;
 
@@ -6,11 +7,17 @@ export function buildAST(tokens) {
 
   const match = (type, value) => {
     const t = peek();
-    if (!t) return false;
+    if (!t) {
+      return false;
+    }
 
-    if (t.type !== type) return false;
+    if (t.type !== type) {
+      return false;
+    }
 
-    if (value !== undefined && t.value !== value) return false;
+    if (value !== undefined && t.value !== value) {
+      return false;
+    }
 
     current++;
     return true;
@@ -19,21 +26,21 @@ export function buildAST(tokens) {
   const parseSliceOrIndex = () => {
     let start = null;
 
-    if (!(peek()?.type === "Colon" || peek()?.type === "Comma" || peek()?.type === "ArrayEnd")) {
+    if (!(peek()?.type === 'Colon' || peek()?.type === 'Comma' || peek()?.type === 'ArrayEnd')) {
       start = parseExpression();
     }
 
-    if (match("Colon")) {
+    if (match('Colon')) {
       let end = null;
 
-      if (!(peek()?.type === "Comma" || peek()?.type === "ArrayEnd")) {
+      if (!(peek()?.type === 'Comma' || peek()?.type === 'ArrayEnd')) {
         end = parseExpression();
       }
 
       return {
-        type: "SliceExpression",
+        type: 'SliceExpression',
         start,
-        end
+        end,
       };
     }
 
@@ -43,64 +50,67 @@ export function buildAST(tokens) {
   /* ================= PRIMARY ================= */
   function parsePrimary() {
     const token = consume();
-    if (!token) throw new Error("Unexpected end of input");
+    if (!token) {
+      throw new Error('Unexpected end of input');
+    }
 
     switch (token.type) {
-      case "Number":
-      case "BigInt":
-      case "Boolean":
-      case "String":
-        return { type: "Literal", value: token.value };
+      case 'Number':
+      case 'BigInt':
+      case 'Boolean':
+      case 'String':
+        return { type: 'Literal', value: token.value };
 
-      case "ImaginaryLiteral":
-        return { type: "ImaginaryLiteral", value: token.value };
+      case 'ImaginaryLiteral':
+        return { type: 'ImaginaryLiteral', value: token.value };
 
-      case "NumberWithUnit":
+      case 'NumberWithUnit':
         return {
-          type: "UnitLiteral",
+          type: 'UnitLiteral',
           value: token.value,
-          unit: token.unit
+          unit: token.unit,
         };
 
-      case "Identifier":
-        return { type: "Identifier", name: token.name };
-      
-      case "Function":
+      case 'Identifier':
+        return { type: 'Identifier', name: token.name };
+
+      case 'Function':
         return {
-          type: "Identifier",
-          name: token.name
+          type: 'Identifier',
+          name: token.name,
         };
 
-      case "Parenthesis":
-        if (token.value === "(") {
+      case 'Parenthesis':
+        if (token.value === '(') {
           const expr = parseExpression();
 
-          if (!match("Parenthesis", ")")) {
+          if (!match('Parenthesis', ')')) {
             throw new Error(`Expected ')'`);
           }
 
           return expr;
         }
-        
-      case "ArrayStart": {
+      // falls through
+
+      case 'ArrayStart': {
         const rows = [];
         let currentRow = [];
 
-        if (!match("ArrayEnd")) {
+        if (!match('ArrayEnd')) {
           while (true) {
             currentRow.push(parseExpression());
 
-            if (match("Comma")) {
+            if (match('Comma')) {
               continue;
             }
 
-            if (match("Semicolon")) {
+            if (match('Semicolon')) {
               rows.push(currentRow);
               currentRow = [];
               continue;
             }
 
-            if (match("ArrayEnd")) {
+            if (match('ArrayEnd')) {
               rows.push(currentRow);
               break;
             }
@@ -110,37 +120,34 @@ export function buildAST(tokens) {
         }
 
         if (!rows.length) {
-          return { type: "ArrayExpression", elements: [] };
+          return { type: 'ArrayExpression', elements: [] };
         }
 
         if (rows.length === 1) {
-          return { type: "ArrayExpression", elements: rows[0] };
+          return { type: 'ArrayExpression', elements: rows[0] };
         }
 
         return {
-          type: "ArrayExpression",
+          type: 'ArrayExpression',
           elements: rows.map((elements) => ({
-            type: "ArrayExpression",
-            elements
-          }))
+            type: 'ArrayExpression',
+            elements,
+          })),
         };
       }
 
-      case "BlockStart": {
+      case 'BlockStart': {
         const properties = [];
 
-        if (!match("BlockEnd")) {
+        if (!match('BlockEnd')) {
           do {
             const keyToken = consume();
 
-            if (
-              keyToken.type !== "Identifier" &&
-              keyToken.type !== "String"
-            ) {
-              throw new Error("Invalid object key");
+            if (keyToken.type !== 'Identifier' && keyToken.type !== 'String') {
+              throw new Error('Invalid object key');
             }
 
-            if (!match("Colon")) {
+            if (!match('Colon')) {
               throw new Error("Expected ':' after key");
             }
 
@@ -148,17 +155,16 @@ export function buildAST(tokens) {
 
             properties.push({
               key: keyToken.value,
-              value
+              value,
             });
+          } while (match('Comma'));
 
-          } while (match("Comma"));
-
-          if (!match("BlockEnd")) {
+          if (!match('BlockEnd')) {
             throw new Error(`Expected '}' at ${current}`);
           }
         }
 
-        return { type: "ObjectExpression", properties };
+        return { type: 'ObjectExpression', properties };
       }
     }
 
@@ -170,51 +176,51 @@ export function buildAST(tokens) {
     let object = parsePrimary();
 
     while (true) {
-      if (match("ArrayStart")) {
+      if (match('ArrayStart')) {
         const selectors = [];
 
-        if (!match("ArrayEnd")) {
+        if (!match('ArrayEnd')) {
           do {
             selectors.push(parseSliceOrIndex());
-          } while (match("Comma"));
+          } while (match('Comma'));
 
-          if (!match("ArrayEnd")) {
+          if (!match('ArrayEnd')) {
             throw new Error(`Expected ']' at ${current}`);
           }
         }
 
         object = {
-          type: "IndexExpression",
+          type: 'IndexExpression',
           object,
-          selectors
+          selectors,
         };
         continue;
       }
 
-      if (match("Dot")) {
+      if (match('Dot')) {
         const property = consume();
 
-        if (property.type !== "Identifier") {
+        if (property.type !== 'Identifier') {
           throw new Error("Expected property after '.'");
         }
 
         object = {
-          type: "MemberExpression",
+          type: 'MemberExpression',
           object,
-          property: { type: "Identifier", name: property.value },
-          optional: false
+          property: { type: 'Identifier', name: property.value },
+          optional: false,
         };
         continue;
       }
 
-      if (match("Operator", "?.")) {
+      if (match('Operator', '?.')) {
         const property = consume();
 
         object = {
-          type: "MemberExpression",
+          type: 'MemberExpression',
           object,
-          property: { type: "Identifier", name: property.value },
-          optional: true
+          property: { type: 'Identifier', name: property.value },
+          optional: true,
         };
         continue;
       }
@@ -229,25 +235,25 @@ export function buildAST(tokens) {
   function parseCallChain() {
     let expr = parseMember();
 
-    while (peek()?.type === "Parenthesis" && peek()?.value === "(") {
+    while (peek()?.type === 'Parenthesis' && peek()?.value === '(') {
       consume(); // '('
 
       const args = [];
 
-      if (!(peek()?.type === "Parenthesis" && peek()?.value === ")")) {
+      if (!(peek()?.type === 'Parenthesis' && peek()?.value === ')')) {
         do {
           args.push(parseExpression());
-        } while (match("Comma"));
+        } while (match('Comma'));
       }
 
-      if (!match("Parenthesis", ")")) {
+      if (!match('Parenthesis', ')')) {
         throw new Error(`Expected ')' at ${current}`);
       }
 
       expr = {
-        type: "CallExpression",
+        type: 'CallExpression',
         callee: expr,
-        arguments: args
+        arguments: args,
       };
     }
 
@@ -256,13 +262,13 @@ export function buildAST(tokens) {
 
   /* ================= UNARY ================= */
   function parseUnary() {
-    if (match("UnaryOperator")) {
+    if (match('UnaryOperator')) {
       const operator = tokens[current - 1].value;
 
       return {
-        type: "UnaryExpression",
+        type: 'UnaryExpression',
         operator,
-        argument: parseUnary()
+        argument: parseUnary(),
       };
     }
 
@@ -271,15 +277,15 @@ export function buildAST(tokens) {
 
   /* ================= POWER ================= */
   function parsePower() {
-    let left = parseUnary();
+    const left = parseUnary();
 
-    if (match("Operator", "^")) {
+    if (match('Operator', '^')) {
       const right = parsePower();
       return {
-        type: "BinaryExpression",
-        operator: "^",
+        type: 'BinaryExpression',
+        operator: '^',
         left,
-        right
+        right,
       };
     }
 
@@ -290,19 +296,15 @@ export function buildAST(tokens) {
   function parseMultiplication() {
     let left = parsePower();
 
-    while (
-      match("Operator", "*") ||
-      match("Operator", "/") ||
-      match("Operator", "%")
-    ) {
+    while (match('Operator', '*') || match('Operator', '/') || match('Operator', '%')) {
       const operator = tokens[current - 1].value;
       const right = parsePower();
 
       left = {
-        type: "BinaryExpression",
+        type: 'BinaryExpression',
         operator,
         left,
-        right
+        right,
       };
     }
 
@@ -313,15 +315,15 @@ export function buildAST(tokens) {
   function parseAddition() {
     let left = parseMultiplication();
 
-    while (match("Operator", "+") || match("Operator", "-")) {
+    while (match('Operator', '+') || match('Operator', '-')) {
       const operator = tokens[current - 1].value;
       const right = parseMultiplication();
 
       left = {
-        type: "BinaryExpression",
+        type: 'BinaryExpression',
         operator,
         left,
-        right
+        right,
       };
     }
 
@@ -330,21 +332,21 @@ export function buildAST(tokens) {
 
   /* ================= UNIT CONVERSION ================= */
   function parseUnitConversion() {
-    let left = parseAddition();
+    const left = parseAddition();
 
     const nextKeyword = peek();
-    if (nextKeyword?.type === "Keyword" && ["to", "in"].includes(nextKeyword.value)) {
+    if (nextKeyword?.type === 'Keyword' && ['to', 'in'].includes(nextKeyword.value)) {
       consume();
       const next = consume();
 
-      if (!next || next.type !== "Unit") {
+      if (!next || next.type !== 'Unit') {
         throw new Error(`Expected unit after '${nextKeyword.value}'`);
       }
 
       return {
-        type: "UnitConversion",
+        type: 'UnitConversion',
         from: left,
-        to: next.value
+        to: next.value,
       };
     }
 
@@ -356,20 +358,20 @@ export function buildAST(tokens) {
     let left = parseUnitConversion();
 
     while (
-      match("Operator", ">") ||
-      match("Operator", "<") ||
-      match("Operator", ">=") ||
-      match("Operator", "<=") ||
-      match("Operator", "==")
+      match('Operator', '>') ||
+      match('Operator', '<') ||
+      match('Operator', '>=') ||
+      match('Operator', '<=') ||
+      match('Operator', '==')
     ) {
       const operator = tokens[current - 1].value;
       const right = parseUnitConversion();
 
       left = {
-        type: "BinaryExpression",
+        type: 'BinaryExpression',
         operator,
         left,
-        right
+        right,
       };
     }
 
@@ -380,18 +382,15 @@ export function buildAST(tokens) {
   function parseLogical() {
     let left = parseComparison();
 
-    while (
-      match("Operator", "&&") ||
-      match("Operator", "||")
-    ) {
+    while (match('Operator', '&&') || match('Operator', '||')) {
       const operator = tokens[current - 1].value;
       const right = parseComparison();
 
       left = {
-        type: "LogicalExpression",
+        type: 'LogicalExpression',
         operator,
         left,
-        right
+        right,
       };
     }
 
@@ -402,14 +401,14 @@ export function buildAST(tokens) {
   function parseNullish() {
     let left = parseLogical();
 
-    while (match("Operator", "??")) {
+    while (match('Operator', '??')) {
       const right = parseLogical();
 
       left = {
-        type: "LogicalExpression",
-        operator: "??",
+        type: 'LogicalExpression',
+        operator: '??',
         left,
-        right
+        right,
       };
     }
 
@@ -418,22 +417,22 @@ export function buildAST(tokens) {
 
   /* ================= TERNARY ================= */
   function parseTernary() {
-    let test = parseNullish();
+    const test = parseNullish();
 
-    if (match("Ternary", "?")) {
+    if (match('Ternary', '?')) {
       const consequent = parseExpression();
 
-      if (!match("Ternary", ":")) {
+      if (!match('Ternary', ':')) {
         throw new Error("Expected ':' in ternary");
       }
 
       const alternate = parseExpression();
 
       return {
-        type: "ConditionalExpression",
+        type: 'ConditionalExpression',
         test,
         consequent,
-        alternate
+        alternate,
       };
     }
 
@@ -444,13 +443,13 @@ export function buildAST(tokens) {
   function parsePipeline() {
     let left = parseTernary();
 
-    while (match("Operator", "|>")) {
+    while (match('Operator', '|>')) {
       const right = parseTernary();
 
       left = {
-        type: "PipelineExpression",
+        type: 'PipelineExpression',
         left,
-        right
+        right,
       };
     }
 
@@ -459,55 +458,55 @@ export function buildAST(tokens) {
 
   /* ================= ASSIGNMENT ================= */
   function parseAssignment() {
-    let left = parsePipeline();
+    const left = parsePipeline();
 
     if (
-      match("Operator", "=") ||
-      match("Operator", "+=") ||
-      match("Operator", "-=") ||
-      match("Operator", "*=") ||
-      match("Operator", "/=")
+      match('Operator', '=') ||
+      match('Operator', '+=') ||
+      match('Operator', '-=') ||
+      match('Operator', '*=') ||
+      match('Operator', '/=')
     ) {
       const operator = tokens[current - 1].value;
 
-      if (left.type === "CallExpression") {
+      if (left.type === 'CallExpression') {
         const isFunctionTarget =
-          left.callee?.type === "Identifier" &&
-          left.arguments.every((arg) => arg.type === "Identifier");
+          left.callee?.type === 'Identifier' &&
+          left.arguments.every((arg) => arg.type === 'Identifier');
 
         if (!isFunctionTarget) {
-          throw new Error("Invalid function definition");
+          throw new Error('Invalid function definition');
         }
 
         const right = parseAssignment();
 
         return {
-          type: "FunctionAssignmentExpression",
+          type: 'FunctionAssignmentExpression',
           operator,
           left: {
-            type: "Identifier",
-            name: left.callee.name
+            type: 'Identifier',
+            name: left.callee.name,
           },
           params: left.arguments.map((arg) => arg.name),
-          right
+          right,
         };
       }
 
       if (
-        left.type !== "Identifier" &&
-        left.type !== "MemberExpression" &&
-        left.type !== "IndexExpression"
+        left.type !== 'Identifier' &&
+        left.type !== 'MemberExpression' &&
+        left.type !== 'IndexExpression'
       ) {
-        throw new Error("Invalid assignment target");
+        throw new Error('Invalid assignment target');
       }
 
       const right = parseAssignment();
 
       return {
-        type: "AssignmentExpression",
+        type: 'AssignmentExpression',
         operator,
         left,
-        right
+        right,
       };
     }
 
@@ -522,9 +521,7 @@ export function buildAST(tokens) {
   const ast = parseExpression();
 
   if (current < tokens.length) {
-    throw new Error(
-      `Unexpected token at end: ${JSON.stringify(peek())}`
-    );
+    throw new Error(`Unexpected token at end: ${JSON.stringify(peek())}`);
   }
 
   return ast;

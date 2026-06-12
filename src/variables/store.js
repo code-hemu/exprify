@@ -1,8 +1,8 @@
+// @ts-check
 const validVarName = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 
 export function createVarStore(initial = {}) {
   let store = Object.create(null);
-  
 
   for (const key in initial) {
     store[key] = initial[key];
@@ -10,10 +10,9 @@ export function createVarStore(initial = {}) {
 
   return {
     set(name, value, { override = true } = {}) {
-
       // Name validation
-      if (typeof name !== "string" || !name) {
-        throw new Error("Variable name must be a non-empty string");
+      if (typeof name !== 'string' || !name) {
+        throw new Error('Variable name must be a non-empty string');
       }
 
       if (!validVarName.test(name)) {
@@ -26,7 +25,7 @@ export function createVarStore(initial = {}) {
       }
 
       // Prevent overwrite (optional)
-      if (!override && name in variablesDB) {
+      if (!override && name in store) {
         throw new Error(`Variable '${name}' already exists`);
       }
 
@@ -65,10 +64,10 @@ export function createVarStore(initial = {}) {
       }
     },
 
-    // clone store (for scoped instances) 
+    // clone store (for scoped instances)
     clone() {
       return createVarStore(store);
-    }
+    },
   };
 }
 

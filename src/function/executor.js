@@ -1,15 +1,16 @@
+// @ts-check
 export function createFunctionExecutor(fnRegistry, options = {}) {
   if (!fnRegistry) {
-    throw new Error("Function registry is required");
+    throw new Error('Function registry is required');
   }
 
   const config = {
-    strict: options.strict ?? true
+    strict: options.strict ?? true,
   };
 
   /* ================= EXECUTE ================= */
 
-  function execute(name, args = [], context) {
+  function execute(name, args = [], _context) {
     const fn = fnRegistry.get(name);
 
     /* ----- NOT FOUND ----- */
@@ -29,9 +30,8 @@ export function createFunctionExecutor(fnRegistry, options = {}) {
     try {
       return fn(...args);
     } catch (err) {
-      throw new Error(
-        `Error in function "${name}": ${err.message}`
-      );
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`Error in function "${name}": ${msg}`, { cause: err });
     }
   }
 
@@ -41,9 +41,10 @@ export function createFunctionExecutor(fnRegistry, options = {}) {
     try {
       return execute(name, args, context);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       return {
         error: true,
-        message: err.message
+        message: msg,
       };
     }
   }
@@ -59,6 +60,6 @@ export function createFunctionExecutor(fnRegistry, options = {}) {
   return {
     execute,
     safeExecute,
-    exists
+    exists,
   };
 }

@@ -1,24 +1,25 @@
-import { unwrapDenseMatrix, wrapDenseMatrix } from "../utils/matrix.js";
+// @ts-check
+import { unwrapDenseMatrix, wrapDenseMatrix } from '../utils/matrix.js';
 
 function validateSquareMatrix(matrix) {
   matrix = unwrapDenseMatrix(matrix);
   if (!Array.isArray(matrix) || matrix.length === 0) {
-    throw new Error("det() expects a non-empty matrix");
+    throw new Error('det() expects a non-empty matrix');
   }
 
   if (!matrix.every(Array.isArray)) {
-    throw new Error("det() expects a 2D matrix");
+    throw new Error('det() expects a 2D matrix');
   }
 
   const size = matrix.length;
   if (!matrix.every((row) => row.length === size)) {
-    throw new Error("det() expects a square matrix");
+    throw new Error('det() expects a square matrix');
   }
 
   for (const row of matrix) {
     for (const value of row) {
-      if (typeof value !== "number" && typeof value !== "bigint") {
-        throw new Error("det() matrix values must be numeric");
+      if (typeof value !== 'number' && typeof value !== 'bigint') {
+        throw new Error('det() matrix values must be numeric');
       }
     }
   }
@@ -33,27 +34,20 @@ function determinant(matrix) {
   }
 
   if (matrix.length === 2) {
-    return (matrix[0][0] * matrix[1][1]) - (matrix[0][1] * matrix[1][0]);
+    return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
   }
 
   return matrix[0].reduce((sum, value, columnIndex) => {
-    const minor = matrix.slice(1).map((row) =>
-      row.filter((_, index) => index !== columnIndex)
-    );
+    const minor = matrix.slice(1).map((row) => row.filter((_, index) => index !== columnIndex));
     const cofactor = columnIndex % 2 === 0 ? value : -value;
-    return sum + (cofactor * determinant(minor));
+    return sum + cofactor * determinant(minor);
   }, 0);
-}
-
-function toLinearArray(value) {
-  const unwrapped = unwrapDenseMatrix(value);
-  return Array.isArray(unwrapped) ? unwrapped : value;
 }
 
 function asMatrixData(value) {
   const data = unwrapDenseMatrix(value);
   if (!Array.isArray(data)) {
-    throw new Error("Expected matrix data");
+    throw new Error('Expected matrix data');
   }
   return data;
 }
@@ -75,7 +69,7 @@ function solveLinearSystem(coefficients, constants) {
     }
 
     if (maxValue === 0) {
-      throw new Error("Linear system is singular");
+      throw new Error('Linear system is singular');
     }
 
     if (maxRow !== pivot) {
@@ -88,7 +82,9 @@ function solveLinearSystem(coefficients, constants) {
     }
 
     for (let row = 0; row < n; row++) {
-      if (row === pivot) continue;
+      if (row === pivot) {
+        continue;
+      }
       const factor = augmented[row][pivot];
       for (let col = pivot; col <= n; col++) {
         augmented[row][col] -= factor * augmented[pivot][col];
@@ -119,7 +115,7 @@ function lupDecomposition(input) {
     }
 
     if (maxValue === 0) {
-      throw new Error("Matrix is singular");
+      throw new Error('Matrix is singular');
     }
 
     if (maxRow !== pivot) {
@@ -137,8 +133,12 @@ function lupDecomposition(input) {
 
   const L = matrix.map((row, rowIndex) =>
     row.map((value, colIndex) => {
-      if (rowIndex === colIndex) return 1;
-      if (rowIndex > colIndex) return value;
+      if (rowIndex === colIndex) {
+        return 1;
+      }
+      if (rowIndex > colIndex) {
+        return value;
+      }
       return 0;
     })
   );
@@ -150,7 +150,7 @@ function lupDecomposition(input) {
   return {
     L: wrapDenseMatrix(L),
     U: wrapDenseMatrix(U),
-    p: permutation
+    p: permutation,
   };
 }
 
@@ -161,7 +161,7 @@ function linearSolve(aInput, bInput) {
   const bVector = Array.isArray(bData[0]) ? bData.map((row) => row[0]) : bData;
 
   if (a.length !== bVector.length) {
-    throw new Error("Right-hand side dimension mismatch");
+    throw new Error('Right-hand side dimension mismatch');
   }
 
   const permutedB = p.map((index) => bVector[index]);
@@ -194,7 +194,7 @@ function solveLyapunov(aInput, qInput) {
 
   const n = A.length;
   if (Q.length !== n) {
-    throw new Error("A and Q must have the same dimensions");
+    throw new Error('A and Q must have the same dimensions');
   }
 
   const coefficients = [];
@@ -225,7 +225,7 @@ function solveLyapunov(aInput, qInput) {
 }
 
 function evaluatePolynomial(coefficients, x) {
-  return coefficients.reduce((sum, coefficient, index) => sum + (coefficient * (x ** index)), 0);
+  return coefficients.reduce((sum, coefficient, index) => sum + coefficient * x ** index, 0);
 }
 
 function syntheticDivide(coefficients, root) {
@@ -233,28 +233,25 @@ function syntheticDivide(coefficients, root) {
   const quotient = [descending[0]];
 
   for (let index = 1; index < descending.length - 1; index++) {
-    quotient.push(descending[index] + (quotient[index - 1] * root));
+    quotient.push(descending[index] + quotient[index - 1] * root);
   }
 
-  const remainder = descending[descending.length - 1] + (quotient[quotient.length - 1] * root);
+  const remainder = descending[descending.length - 1] + quotient[quotient.length - 1] * root;
   return {
     quotient: quotient.reverse(),
-    remainder
+    remainder,
   };
 }
 
 function solveQuadratic(coefficients) {
   const [c, b, a] = coefficients;
-  const discriminant = (b ** 2) - (4 * a * c);
+  const discriminant = b ** 2 - 4 * a * c;
   if (discriminant < 0) {
-    throw new Error("Only real roots are supported");
+    throw new Error('Only real roots are supported');
   }
 
   const sqrtDisc = Math.sqrt(discriminant);
-  return [
-    (-b + sqrtDisc) / (2 * a),
-    (-b - sqrtDisc) / (2 * a)
-  ];
+  return [(-b + sqrtDisc) / (2 * a), (-b - sqrtDisc) / (2 * a)];
 }
 
 function polynomialRoots(...coefficients) {
@@ -264,7 +261,7 @@ function polynomialRoots(...coefficients) {
 
   const degree = coefficients.length - 1;
   if (degree < 1) {
-    throw new Error("polynomialRoot() expects at least a linear polynomial");
+    throw new Error('polynomialRoot() expects at least a linear polynomial');
   }
 
   if (degree === 1) {
@@ -278,7 +275,6 @@ function polynomialRoots(...coefficients) {
 
   if (degree === 3) {
     const constant = coefficients[0];
-    const leading = coefficients[3];
     const candidates = [];
     const limit = Math.abs(constant);
 
@@ -297,11 +293,11 @@ function polynomialRoots(...coefficients) {
     }
   }
 
-  throw new Error("polynomialRoot() currently supports degree up to 3");
+  throw new Error('polynomialRoot() currently supports degree up to 3');
 }
 
 function dotProduct(a, b) {
-  return a.reduce((sum, value, index) => sum + (value * b[index]), 0);
+  return a.reduce((sum, value, index) => sum + value * b[index], 0);
 }
 
 function vectorNorm(vector) {
@@ -323,7 +319,7 @@ function transpose(matrix) {
 function qrDecomposition(input) {
   const A = asMatrixData(input).map((row) => [...row]);
   if (!A.length || !A.every((row) => row.length === A[0].length)) {
-    throw new Error("qr() expects a rectangular matrix");
+    throw new Error('qr() expects a rectangular matrix');
   }
 
   const rowCount = A.length;
@@ -341,7 +337,7 @@ function qrDecomposition(input) {
 
     const norm = vectorNorm(vector);
     if (norm === 0) {
-      throw new Error("qr() requires linearly independent columns");
+      throw new Error('qr() requires linearly independent columns');
     }
 
     qColumns.push(scaleVector(vector, 1 / norm));
@@ -374,20 +370,17 @@ function qrDecomposition(input) {
 
   return {
     Q: wrapDenseMatrix(Q),
-    R: wrapDenseMatrix(fullR)
+    R: wrapDenseMatrix(fullR),
   };
 }
 
 function splitTerms(expression) {
-  const normalized = expression.replace(/\s+/g, "");
+  const normalized = expression.replace(/\s+/g, '');
   if (!normalized) {
     return [];
   }
 
-  return normalized
-    .replace(/-/g, "+-")
-    .split("+")
-    .filter(Boolean);
+  return normalized.replace(/-/g, '+-').split('+').filter(Boolean);
 }
 
 function parsePolynomial(expression, variable) {
@@ -399,35 +392,37 @@ function parsePolynomial(expression, variable) {
       const [rawCoeff, rawPower] = term.split(variable);
       let coefficient;
 
-      if (rawCoeff === "" || rawCoeff === "+") coefficient = 1;
-      else if (rawCoeff === "-") coefficient = -1;
-      else {
-        const cleaned = rawCoeff.endsWith("*") ? rawCoeff.slice(0, -1) : rawCoeff;
+      if (rawCoeff === '' || rawCoeff === '+') {
+        coefficient = 1;
+      } else if (rawCoeff === '-') {
+        coefficient = -1;
+      } else {
+        const cleaned = rawCoeff.endsWith('*') ? rawCoeff.slice(0, -1) : rawCoeff;
         coefficient = Number(cleaned);
       }
 
       if (!Number.isFinite(coefficient)) {
-        throw new Error("Unsupported algebra term");
+        throw new Error('Unsupported algebra term');
       }
 
       let power = 1;
       if (rawPower) {
-        if (!rawPower.startsWith("^")) {
-          throw new Error("Unsupported algebra term");
+        if (!rawPower.startsWith('^')) {
+          throw new Error('Unsupported algebra term');
         }
 
         power = Number(rawPower.slice(1));
       }
 
       if (!Number.isInteger(power) || power < 0) {
-        throw new Error("Only non-negative integer powers are supported");
+        throw new Error('Only non-negative integer powers are supported');
       }
 
       coefficients.set(power, (coefficients.get(power) || 0) + coefficient);
     } else {
       const constant = Number(term);
       if (!Number.isFinite(constant)) {
-        throw new Error("Unsupported algebra term");
+        throw new Error('Unsupported algebra term');
       }
       coefficients.set(0, (coefficients.get(0) || 0) + constant);
     }
@@ -442,36 +437,36 @@ function formatPolynomial(coefficients, variable) {
     .sort((a, b) => b[0] - a[0]);
 
   if (!ordered.length) {
-    return "0";
+    return '0';
   }
 
-  return ordered.map(([power, coefficient], index) => {
-    const negative = coefficient < 0;
-    const absCoeff = Math.abs(coefficient);
-    let body;
+  return ordered
+    .map(([power, coefficient], index) => {
+      const negative = coefficient < 0;
+      const absCoeff = Math.abs(coefficient);
+      let body;
 
-    if (power === 0) {
-      body = `${absCoeff}`;
-    } else if (power === 1) {
-      body = absCoeff === 1 ? variable : `${absCoeff} * ${variable}`;
-    } else {
-      body = absCoeff === 1
-        ? `${variable}^${power}`
-        : `${absCoeff} * ${variable}^${power}`;
-    }
+      if (power === 0) {
+        body = `${absCoeff}`;
+      } else if (power === 1) {
+        body = absCoeff === 1 ? variable : `${absCoeff} * ${variable}`;
+      } else {
+        body = absCoeff === 1 ? `${variable}^${power}` : `${absCoeff} * ${variable}^${power}`;
+      }
 
-    if (index === 0) {
-      return negative ? `-${body}` : body;
-    }
+      if (index === 0) {
+        return negative ? `-${body}` : body;
+      }
 
-    return negative ? `- ${body}` : `+ ${body}`;
-  }).join(" ");
+      return negative ? `- ${body}` : `+ ${body}`;
+    })
+    .join(' ');
 }
 
 function simplifyExpression(expression) {
-  const compact = expression.replace(/\s+/g, "");
+  const compact = expression.replace(/\s+/g, '');
   const variableMatch = compact.match(/[a-zA-Z]+/);
-  const variable = variableMatch?.[0] || "x";
+  const variable = variableMatch?.[0] || 'x';
   const coefficients = parsePolynomial(expression, variable);
   return formatPolynomial(coefficients, variable);
 }
@@ -481,8 +476,10 @@ function derivativeExpression(expression, variable) {
   const derived = new Map();
 
   for (const [power, coefficient] of coefficients.entries()) {
-    if (power === 0) continue;
-    derived.set(power - 1, (derived.get(power - 1) || 0) + (coefficient * power));
+    if (power === 0) {
+      continue;
+    }
+    derived.set(power - 1, (derived.get(power - 1) || 0) + coefficient * power);
   }
 
   return formatPolynomial(derived, variable);
@@ -490,12 +487,16 @@ function derivativeExpression(expression, variable) {
 
 export const internalFunctions = {
   max: (...args) => {
-    if (!args.length) throw new Error("max() requires arguments");
+    if (!args.length) {
+      throw new Error('max() requires arguments');
+    }
     return Math.max(...args);
   },
 
   min: (...args) => {
-    if (!args.length) throw new Error("min() requires arguments");
+    if (!args.length) {
+      throw new Error('min() requires arguments');
+    }
     return Math.min(...args);
   },
 
@@ -508,7 +509,9 @@ export const internalFunctions = {
   ceil: (x) => Math.ceil(x),
 
   sqrt: (x) => {
-    if (x < 0) throw new Error("sqrt() domain error");
+    if (x < 0) {
+      throw new Error('sqrt() domain error');
+    }
     return Math.sqrt(x);
   },
 
@@ -520,14 +523,14 @@ export const internalFunctions = {
   lyap: (a, q) => solveLyapunov(a, q),
   qr: (matrix) => qrDecomposition(matrix),
   simplify: (expression) => {
-    if (typeof expression !== "string") {
-      throw new Error("simplify() expects an expression string");
+    if (typeof expression !== 'string') {
+      throw new Error('simplify() expects an expression string');
     }
     return simplifyExpression(expression);
   },
-  derivative: (expression, variable = "x") => {
-    if (typeof expression !== "string" || typeof variable !== "string") {
-      throw new Error("derivative() expects expression and variable strings");
+  derivative: (expression, variable = 'x') => {
+    if (typeof expression !== 'string' || typeof variable !== 'string') {
+      throw new Error('derivative() expects expression and variable strings');
     }
     return derivativeExpression(expression, variable);
   },
@@ -545,12 +548,16 @@ export const internalFunctions = {
   /* ================= LOG / EXP ================= */
 
   log: (x) => {
-    if (x <= 0) throw new Error("log() domain error");
+    if (x <= 0) {
+      throw new Error('log() domain error');
+    }
     return Math.log(x);
   },
 
   log10: (x) => {
-    if (x <= 0) throw new Error("log10() domain error");
+    if (x <= 0) {
+      throw new Error('log10() domain error');
+    }
     return Math.log10(x);
   },
 
@@ -567,31 +574,33 @@ export const internalFunctions = {
   or: (a, b) => Boolean(a || b),
 
   not: (a) => !a,
-  "!": (a) => !a,
+  '!': (a) => !a,
 
   /* ================= COMPARISON ================= */
 
   eq: (a, b) => a === b,
 
   neq: (a, b) => a !== b,
-  "notEqual": (a, b) => a !== b,
+  notEqual: (a, b) => a !== b,
 
   gt: (a, b) => a > b,
-  "greaterThan": (a, b) => a > b,
+  greaterThan: (a, b) => a > b,
 
   lt: (a, b) => a < b,
-  "lessThan": (a, b) => a < b,
+  lessThan: (a, b) => a < b,
 
   gte: (a, b) => a >= b,
-  "greaterThanOrEqual": (a, b) => a >= b,
+  greaterThanOrEqual: (a, b) => a >= b,
 
   lte: (a, b) => a <= b,
-  "lessThanOrEqual": (a, b) => a <= b,
+  lessThanOrEqual: (a, b) => a <= b,
 
   /* ================= UTILITY ================= */
 
   clamp: (x, min, max) => {
-    if (min > max) throw new Error("clamp(): min > max");
+    if (min > max) {
+      throw new Error('clamp(): min > max');
+    }
     return Math.min(Math.max(x, min), max);
   },
 
@@ -604,9 +613,9 @@ export const internalFunctions = {
   /* ================= STRING ================= */
 
   length: (x) => {
-    if (typeof x === "string" || Array.isArray(x)) {
+    if (typeof x === 'string' || Array.isArray(x)) {
       return x.length;
     }
-    throw new Error("length() expects string or array");
-  }
+    throw new Error('length() expects string or array');
+  },
 };
