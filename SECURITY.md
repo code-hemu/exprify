@@ -2,20 +2,16 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| 1.x     | ✅ |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+If you discover a security vulnerability in Exprify, please report it privately by opening a security advisory at:
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+https://github.com/code-hemu/Exprify/security/advisories/new
+
+You can expect an acknowledgment within 48 hours and a detailed response within 5 business days. If the vulnerability is accepted, a fix will be coordinated through a private release and published as a patch version. If declined, you will receive an explanation of why the issue does not constitute a security risk.
+
+Please do **not** report security vulnerabilities through public GitHub issues, discussions, or pull requests.
