@@ -38,15 +38,6 @@
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
-  "lint-staged": {
-    "*.{js,mjs}": [
-      "npx eslint --fix",
-      "npx prettier --write"
-    ],
-    "*.{json,md}": [
-      "npx prettier --write"
-    ]
-  },
   "jest": {
     "testMatch": [
       "**/test/**/*.js"
