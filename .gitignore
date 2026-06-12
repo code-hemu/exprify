@@ -5,7 +5,7 @@ node_modules/
 coverage/
 
 # Husky generated scripts
-.husky
+.husky/
 
 # Build output
 dist
