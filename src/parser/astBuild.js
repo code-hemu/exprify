@@ -4,6 +4,27 @@ export function buildAST(tokens) {
 
   const peek = () => tokens[current];
   const consume = () => tokens[current++];
+  const lastPos = () => {
+    const t = current > 0 ? tokens[current - 1] : null;
+    return t && t.pos !== undefined ? t.pos : -1;
+  };
+  const tokenPos = () => {
+    const t = peek();
+    return t && t.pos !== undefined ? t.pos : -1;
+  };
+
+  const nodeAt = (/** @type {any} */ node) => {
+    const pos = lastPos();
+    if (pos >= 0) { node.pos = pos; }
+    return node;
+  };
+
+  const syntaxError = (/** @type {string} */ msg) => {
+    const pos = tokenPos() >= 0 ? tokenPos() : lastPos();
+    const at = pos >= 0 ? ` at position ${pos}` : '';
+    throw new Error(`${msg}${at}`);
+  };
+
   const match = (/** @type {string} */ type, /** @type {string | undefined} */ value) => {
     const t = peek();
     if (!t) {
@@ -49,41 +70,48 @@ export function buildAST(tokens) {
   function parsePrimary() {
     const token = consume();
     if (!token) {
-      throw new Error('Unexpected end of input');
+      syntaxError('Unexpected end of input');
     }
+
+    const withPos = (/** @type {any} */ node) => {
+      if (token.pos !== undefined) {
+        node.pos = token.pos;
+      }
+      return node;
+    };
 
     switch (token.type) {
       case 'Number':
       case 'BigInt':
       case 'Boolean':
       case 'String':
-        return { type: 'Literal', value: token.value };
+        return withPos({ type: 'Literal', value: token.value });
 
       case 'ImaginaryLiteral':
-        return { type: 'ImaginaryLiteral', value: token.value };
+        return withPos({ type: 'ImaginaryLiteral', value: token.value });
 
       case 'NumberWithUnit':
-        return {
+        return withPos({
           type: 'UnitLiteral',
           value: token.value,
           unit: token.unit,
-        };
+        });
 
       case 'Identifier':
-        return { type: 'Identifier', name: token.name };
+        return withPos({ type: 'Identifier', name: token.name });
 
       case 'Function':
-        return {
+        return withPos({
           type: 'Identifier',
           name: token.name,
-        };
+        });
 
       case 'Parenthesis':
         if (token.value === '(') {
           const expr = parseExpression();
 
           if (!match('Parenthesis', ')')) {
-            throw new Error(`Expected ')'`);
+            syntaxError("Expected ')'");
           }
 
           return expr;
@@ -114,25 +142,25 @@ export function buildAST(tokens) {
               break;
             }
 
-            throw new Error(`Expected ',', ';', or ']' at ${current}`);
+            syntaxError("Expected ',', ';', or ']'");
           }
         }
 
         if (!rows.length) {
-          return { type: 'ArrayExpression', elements: [] };
+          return withPos({ type: 'ArrayExpression', elements: [] });
         }
 
         if (rows.length === 1) {
-          return { type: 'ArrayExpression', elements: rows[0] };
+          return withPos({ type: 'ArrayExpression', elements: rows[0] });
         }
 
-        return {
+        return withPos({
           type: 'ArrayExpression',
           elements: rows.map((elements) => ({
             type: 'ArrayExpression',
             elements,
           })),
-        };
+        });
       }
 
       case 'BlockStart': {
@@ -143,11 +171,11 @@ export function buildAST(tokens) {
             const keyToken = consume();
 
             if (keyToken.type !== 'Identifier' && keyToken.type !== 'String') {
-              throw new Error('Invalid object key');
+              syntaxError('Invalid object key');
             }
 
             if (!match('Colon', undefined)) {
-              throw new Error("Expected ':' after key");
+              syntaxError("Expected ':' after key");
             }
 
             const value = parseExpression();
@@ -159,15 +187,15 @@ export function buildAST(tokens) {
           } while (match('Comma', undefined));
 
           if (!match('BlockEnd', undefined)) {
-            throw new Error(`Expected '}' at ${current}`);
+            syntaxError("Expected '}'");
           }
         }
 
-        return { type: 'ObjectExpression', properties };
+        return withPos({ type: 'ObjectExpression', properties });
       }
     }
 
-    throw new Error(`Unexpected token: ${JSON.stringify(token)}`);
+    syntaxError(`Unexpected token: ${JSON.stringify(token.value || token.name || token.type)}`);
   }
 
   function parseMember() {
@@ -183,15 +211,15 @@ export function buildAST(tokens) {
           } while (match('Comma', undefined));
 
           if (!match('ArrayEnd', undefined)) {
-            throw new Error(`Expected ']' at ${current}`);
+            syntaxError("Expected ']'");
           }
         }
 
-        object = {
+        object = nodeAt({
           type: 'IndexExpression',
           object,
           selectors,
-        };
+        });
         continue;
       }
 
@@ -199,27 +227,27 @@ export function buildAST(tokens) {
         const property = consume();
 
         if (property.type !== 'Identifier') {
-          throw new Error("Expected property after '.'");
+          syntaxError("Expected property after '.'");
         }
 
-        object = {
+        object = nodeAt({
           type: 'MemberExpression',
           object,
           property: { type: 'Identifier', name: property.value },
           optional: false,
-        };
+        });
         continue;
       }
 
       if (match('Operator', '?.')) {
         const property = consume();
 
-        object = {
+        object = nodeAt({
           type: 'MemberExpression',
           object,
           property: { type: 'Identifier', name: property.value },
           optional: true,
-        };
+        });
         continue;
       }
 
@@ -249,14 +277,14 @@ export function buildAST(tokens) {
       }
 
       if (!match('Parenthesis', ')')) {
-        throw new Error(`Expected ')' at ${current}`);
+        syntaxError("Expected ')'");
       }
 
-      expr = {
+      expr = nodeAt({
         type: 'CallExpression',
         callee: expr,
         arguments: args,
-      };
+      });
     }
 
     return expr;
@@ -266,11 +294,11 @@ export function buildAST(tokens) {
     if (match('UnaryOperator', undefined)) {
       const operator = tokens[current - 1].value;
 
-      return {
+      return nodeAt({
         type: 'UnaryExpression',
         operator,
         argument: parseUnary(),
-      };
+      });
     }
 
     return parseCallChain();
@@ -281,12 +309,12 @@ export function buildAST(tokens) {
 
     if (match('Operator', '^')) {
       const right = parsePower();
-      return {
+      return nodeAt({
         type: 'BinaryExpression',
         operator: '^',
         left,
         right,
-      };
+      });
     }
 
     return left;
@@ -299,12 +327,12 @@ export function buildAST(tokens) {
       const operator = tokens[current - 1].value;
       const right = parsePower();
 
-      left = {
+      left = nodeAt({
         type: 'BinaryExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
@@ -317,12 +345,12 @@ export function buildAST(tokens) {
       const operator = tokens[current - 1].value;
       const right = parseMultiplication();
 
-      left = {
+      left = nodeAt({
         type: 'BinaryExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
@@ -337,14 +365,14 @@ export function buildAST(tokens) {
       const next = consume();
 
       if (!next || next.type !== 'Unit') {
-        throw new Error(`Expected unit after '${nextKeyword.value}'`);
+        syntaxError(`Expected unit after '${nextKeyword.value}'`);
       }
 
-      return {
+      return nodeAt({
         type: 'UnitConversion',
         from: left,
         to: next.value,
-      };
+      });
     }
 
     return left;
@@ -363,12 +391,12 @@ export function buildAST(tokens) {
       const operator = tokens[current - 1].value;
       const right = parseUnitConversion();
 
-      left = {
+      left = nodeAt({
         type: 'BinaryExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
@@ -381,12 +409,12 @@ export function buildAST(tokens) {
       const operator = tokens[current - 1].value;
       const right = parseComparison();
 
-      left = {
+      left = nodeAt({
         type: 'LogicalExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
@@ -398,12 +426,12 @@ export function buildAST(tokens) {
     while (match('Operator', '??')) {
       const right = parseLogical();
 
-      left = {
+      left = nodeAt({
         type: 'LogicalExpression',
         operator: '??',
         left,
         right,
-      };
+      });
     }
 
     return left;
@@ -416,27 +444,27 @@ export function buildAST(tokens) {
       const consequent = parseExpression();
 
       if (!match('Ternary', ':')) {
-        throw new Error("Expected ':' in ternary");
+        syntaxError("Expected ':' in ternary");
       }
 
       const alternate = parseExpression();
 
-      return {
+      return nodeAt({
         type: 'ConditionalExpression',
         test,
         consequent,
         alternate,
-      };
+      });
     }
 
     if (match('Colon', undefined)) {
       const end = parseNullish();
 
-      return {
+      return nodeAt({
         type: 'RangeExpression',
         start: test,
         end,
-      };
+      });
     }
 
     return test;
@@ -452,21 +480,21 @@ export function buildAST(tokens) {
       } else if (left.type === 'ArrayExpression') {
         params = left.elements.map((/** @type {{ type: string; name: any; }} */ el) => {
           if (el.type !== 'Identifier') {
-            throw new Error('Lambda parameter must be an identifier');
+            syntaxError('Lambda parameter must be an identifier');
           }
           return el.name;
         });
       } else {
-        throw new Error('Invalid lambda parameter');
+        syntaxError('Invalid lambda parameter');
       }
 
       const body = parseLambda();
 
-      return {
+      return nodeAt({
         type: 'ArrowFunctionExpression',
         params,
         body,
-      };
+      });
     }
 
     return left;
@@ -478,11 +506,11 @@ export function buildAST(tokens) {
     while (match('Operator', '|>')) {
       const right = parseTernary();
 
-      left = {
+      left = nodeAt({
         type: 'PipelineExpression',
         left,
         right,
-      };
+      });
     }
 
     return left;
@@ -507,12 +535,12 @@ export function buildAST(tokens) {
           left.arguments.every((/** @type {{ type: string; }} */ arg) => arg.type === 'Identifier');
 
         if (!isFunctionTarget) {
-          throw new Error('Invalid function definition');
+          syntaxError('Invalid function definition');
         }
 
         const right = parseAssignment();
 
-        return {
+        return nodeAt({
           type: 'FunctionAssignmentExpression',
           operator,
           left: {
@@ -521,7 +549,7 @@ export function buildAST(tokens) {
           },
           params: left.arguments.map((/** @type {{ name: any; }} */ arg) => arg.name),
           right,
-        };
+        });
       }
 
       if (
@@ -529,17 +557,17 @@ export function buildAST(tokens) {
         left.type !== 'MemberExpression' &&
         left.type !== 'IndexExpression'
       ) {
-        throw new Error('Invalid assignment target');
+        syntaxError('Invalid assignment target');
       }
 
       const right = parseAssignment();
 
-      return {
+      return nodeAt({
         type: 'AssignmentExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
@@ -552,7 +580,9 @@ export function buildAST(tokens) {
   const ast = parseExpression();
 
   if (current < tokens.length) {
-    throw new Error(`Unexpected token at end: ${JSON.stringify(peek())}`);
+    const t = peek();
+    const pos = t && t.pos !== undefined ? ` at position ${t.pos}` : '';
+    throw new Error(`Unexpected token "${t ? JSON.stringify(t.value || t.name || t.type) : '?'}"${pos}`);
   }
 
   return ast;

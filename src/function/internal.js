@@ -1,4 +1,6 @@
 import { unwrapDenseMatrix, wrapDenseMatrix } from '../utils/matrix.js';
+import { fraction as makeFrac, isFraction, numer, denom } from '../math/fraction.js';
+import { bigNumber as makeBN, isBigNumber } from '../math/bignumber.js';
 
 /** @param {any[]} matrix */
 function validateSquareMatrix(matrix) {
@@ -833,6 +835,18 @@ function _svd(matrix) {
 }
 
 export const internalFunctions = {
+  fraction: (/** @type {number} */ n, /** @type {number} */ d) => makeFrac(n, d),
+
+  numer: (/** @type {any} */ v) => numer(v),
+
+  denom: (/** @type {any} */ v) => denom(v),
+
+  isFraction: (/** @type {any} */ v) => isFraction(v),
+
+  bignumber: (/** @type {any} */ n) => makeBN(n),
+
+  isBigNumber: (/** @type {any} */ v) => isBigNumber(v),
+
   max: (/** @type {any[]} */ ...args) => {
     if (!args.length) {
       throw new Error('max() requires arguments');
@@ -1027,6 +1041,20 @@ export const internalFunctions = {
   cos: (/** @type {number} */ x) => Math.cos(x),
 
   tan: (/** @type {number} */ x) => Math.tan(x),
+
+  sind: (/** @type {number} */ x) => Math.sin((x * Math.PI) / 180),
+
+  cosd: (/** @type {number} */ x) => Math.cos((x * Math.PI) / 180),
+
+  tand: (/** @type {number} */ x) => Math.tan((x * Math.PI) / 180),
+
+  asind: (/** @type {number} */ x) => (Math.asin(x) * 180) / Math.PI,
+
+  acosd: (/** @type {number} */ x) => (Math.acos(x) * 180) / Math.PI,
+
+  atand: (/** @type {number} */ x) => (Math.atan(x) * 180) / Math.PI,
+
+  atand2: (/** @type {number} */ y, /** @type {number} */ x) => (Math.atan2(y, x) * 180) / Math.PI,
 
   asin: (/** @type {number} */ x) => Math.asin(x),
 

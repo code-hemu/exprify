@@ -8,7 +8,22 @@ function tokenize(expr, context = {}) {
 
   const operators = ['+', '-', '*', '/', '%', '^', '=', '>', '<', '!', '&', '|'];
   // Two-char operators checked before single-char to avoid ambiguity (e.g., == vs =)
-  const multiOps = ['==', '>=', '<=', '&&', '||', '+=', '-=', '*=', '/=', '%=', '?.', '??', '|>', '->'];
+  const multiOps = [
+    '==',
+    '>=',
+    '<=',
+    '&&',
+    '||',
+    '+=',
+    '-=',
+    '*=',
+    '/=',
+    '%=',
+    '?.',
+    '??',
+    '|>',
+    '->',
+  ];
 
   const parentheses = '()';
   const comma = ',';
@@ -23,8 +38,7 @@ function tokenize(expr, context = {}) {
    * @param {number} charIndex
    */
   function getContext(str, charIndex) {
-
-    const words =  (str.match(/[a-z0-9]+/gi) || []);
+    const words = str.match(/[a-z0-9]+/gi) || [];
 
     // 2. Identify the current character and the one immediately before it
     const currentChar = str[charIndex] || null;
@@ -62,8 +76,9 @@ function tokenize(expr, context = {}) {
     };
   }
 
-  
-  const isUnaryContext = (/** @type {{ type: string; value: any; pos: number; } | { type: string; value: string; pos?: undefined; } | { type: string; value?: undefined; pos?: undefined; } | { type: string; pos: number; value?: undefined; }} */ prev) =>
+  const isUnaryContext = (
+    /** @type {{ type: string; value: any; pos: number; } | { type: string; value: string; pos?: undefined; } | { type: string; value?: undefined; pos?: undefined; } | { type: string; pos: number; value?: undefined; }} */ prev
+  ) =>
     !prev ||
     prev.type === 'Operator' ||
     prev.type === 'UnaryOperator' ||
@@ -73,7 +88,6 @@ function tokenize(expr, context = {}) {
     prev.type === 'Comma' ||
     prev.type === 'Ternary';
 
-  
   const flushCurrent = (/** @type {string | null} */ nextChar, /** @type {number} */ index) => {
     if (!current) {
       return;
@@ -296,7 +310,7 @@ function tokenize(expr, context = {}) {
       tokens.push({ type: 'Dot', pos: i });
       continue;
     }
-    
+
     // operators
     if (operators.includes(char)) {
       flushCurrent(char, i);
@@ -426,7 +440,6 @@ const isDenseMatrixWrapper = (/** @type {any} */ value) =>
   'data' in value &&
   'size' in value;
 
-
 const cloneMatrixData = (/** @type {any[]} */ value) => {
   if (Array.isArray(value)) {
     return value.map(cloneMatrixData);
@@ -434,7 +447,6 @@ const cloneMatrixData = (/** @type {any[]} */ value) => {
 
   return value;
 };
-
 
 const getMatrixSize = (/** @type {any[]} */ data) => {
   if (Array.isArray(data) && data.every(Array.isArray)) {
@@ -448,17 +460,14 @@ const getMatrixSize = (/** @type {any[]} */ data) => {
   throw new Error('Matrix data must be an array');
 };
 
-
 const wrapDenseMatrix = (/** @type {any[][]} */ data) => ({
   exprify: 'DenseMatrix',
   data: cloneMatrixData(data),
   size: getMatrixSize(data),
 });
 
-
 const unwrapDenseMatrix = (/** @type {any} */ value) =>
   isDenseMatrixWrapper(value) ? cloneMatrixData(value.data) : value;
-
 
 const serializeExprifyValue = (/** @type {any} */ value) => {
   if (isDenseMatrixWrapper(value)) {
@@ -478,18 +487,361 @@ const serializeExprifyValue = (/** @type {any} */ value) => {
   return value;
 };
 
+const gcd = (a, b) => {
+  a = Math.abs(a);
+  b = Math.abs(b);
+  while (b) {
+    [a, b] = [b, a % b];
+  }
+  return a;
+};
+
+function fraction(n, d = 1) {
+  if (typeof n !== 'number' || typeof d !== 'number') {
+    throw new Error('Fraction requires numeric arguments');
+  }
+  if (!Number.isInteger(n) || !Number.isInteger(d)) {
+    throw new Error('Fraction requires integer arguments');
+  }
+  if (d === 0) {
+    throw new Error('Fraction denominator cannot be zero');
+  }
+  if (d < 0) {
+    n = -n;
+    d = -d;
+  }
+  const g = gcd(n, d);
+  return { n: n / g, d: d / g };
+}
+
+function isFraction(v) {
+  return v && typeof v === 'object' && 'n' in v && 'd' in v && !('re' in v) && !('unit' in v);
+}
+
+function addFrac(a, b) {
+  return fraction(a.n * b.d + b.n * a.d, a.d * b.d);
+}
+
+function subFrac(a, b) {
+  return fraction(a.n * b.d - b.n * a.d, a.d * b.d);
+}
+
+function mulFrac(a, b) {
+  return fraction(a.n * b.n, a.d * b.d);
+}
+
+function divFrac(a, b) {
+  return fraction(a.n * b.d, a.d * b.n);
+}
+
+function powFrac(a, exp) {
+  if (!Number.isInteger(exp) || exp < 0) {
+    return null;
+  }
+  return fraction(a.n ** exp, a.d ** exp);
+}
+
+function numer(v) {
+  if (!isFraction(v)) {throw new Error('numer() expects a fraction');}
+  return v.n;
+}
+
+function denom(v) {
+  if (!isFraction(v)) {throw new Error('denom() expects a fraction');}
+  return v.d;
+}
+
+function formatFraction(v) {
+  if (!isFraction(v)) {return String(v);}
+  if (v.d === 1) {return String(v.n);}
+  return `${v.n}/${v.d}`;
+}
+
+const MAX_SAFE_DP = 100;
+
+class ExprDecimal {
+  static DP = 20;
+
+  #sign;
+  #int;
+  #dp;
+
+  constructor(value) {
+    if (value instanceof ExprDecimal) {
+      this.#sign = value.#sign;
+      this.#int = value.#int;
+      this.#dp = value.#dp;
+      return;
+    }
+
+    if (typeof value === 'bigint') {
+      this.#sign = value >= 0n ? 1 : -1;
+      this.#int = value >= 0n ? value : -value;
+      this.#dp = 0;
+      return;
+    }
+
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) {
+        throw new Error(`Cannot create ExprDecimal from ${  value}`);
+      }
+      value = String(value);
+    }
+
+    if (typeof value !== 'string') {
+      throw new Error('ExprDecimal expects a number, string, bigint, or ExprDecimal');
+    }
+
+    let s = value.trim();
+    if (s === '') {
+      throw new Error('Cannot create ExprDecimal from empty string');
+    }
+
+    this.#sign = 1;
+    if (s[0] === '-') {
+      this.#sign = -1;
+      s = s.slice(1);
+    } else if (s[0] === '+') {
+      s = s.slice(1);
+    }
+
+    let exp = 0;
+    const eIdx = s.search(/[eE]/);
+    if (eIdx !== -1) {
+      exp = parseInt(s.slice(eIdx + 1), 10);
+      s = s.slice(0, eIdx);
+    }
+
+    const dotIdx = s.indexOf('.');
+    if (dotIdx === -1) {
+      this.#int = BigInt(s || '0');
+      this.#dp = 0;
+    } else {
+      const intPart = s.slice(0, dotIdx) || '0';
+      const fracPart = s.slice(dotIdx + 1);
+      const combined = intPart + fracPart;
+      this.#int = BigInt(combined || '0');
+      this.#dp = fracPart.length;
+    }
+
+    this.#dp -= exp;
+    if (this.#dp < 0) {
+      this.#int *= 10n ** BigInt(-this.#dp);
+      this.#dp = 0;
+    }
+
+    this.#normalize();
+  }
+
+  #normalize() {
+    while (this.#dp > 0 && this.#int % 10n === 0n) {
+      this.#int /= 10n;
+      this.#dp--;
+    }
+    if (this.#int === 0n) {
+      this.#sign = 1;
+      this.#dp = 0;
+    }
+  }
+
+  #align(other) {
+    if (this.#dp === other.#dp) {
+      return [this.#int * BigInt(this.#sign), other.#int * BigInt(other.#sign), this.#dp];
+    }
+    if (this.#dp < other.#dp) {
+      const factor = 10n ** BigInt(other.#dp - this.#dp);
+      return [this.#int * factor * BigInt(this.#sign), other.#int * BigInt(other.#sign), other.#dp];
+    }
+    const factor = 10n ** BigInt(this.#dp - other.#dp);
+    return [this.#int * BigInt(this.#sign), other.#int * factor * BigInt(other.#sign), this.#dp];
+  }
+
+  #fromParts(sign, int, dp) {
+    const d = new ExprDecimal(0);
+    d.#sign = sign;
+    d.#int = int < 0n ? -int : int;
+    if (int < 0n) {d.#sign = -sign;}
+    d.#dp = dp;
+    d.#normalize();
+    return d;
+  }
+
+  plus(other) {
+    other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
+    const [a, b, dp] = this.#align(other);
+    return this.#fromParts(1, a + b, dp);
+  }
+
+  minus(other) {
+    other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
+    const [a, b, dp] = this.#align(other);
+    return this.#fromParts(1, a - b, dp);
+  }
+
+  times(other) {
+    other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
+    const int = this.#int * other.#int;
+    const dp = this.#dp + other.#dp;
+    return this.#fromParts(this.#sign * other.#sign, int, dp);
+  }
+
+  div(other) {
+    other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
+    if (other.#int === 0n) {
+      throw new Error('Division by zero');
+    }
+    const targetDp = Math.min(ExprDecimal.DP, MAX_SAFE_DP);
+    const scale = 10n ** BigInt(targetDp + other.#dp);
+    const dividend = this.#int * scale;
+    const quotient = dividend / other.#int;
+    const sign = this.#sign * other.#sign;
+    if (quotient === 0n) {
+      return new ExprDecimal(0);
+    }
+    return this.#fromParts(sign, quotient, targetDp);
+  }
+
+  mod(other) {
+    other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
+    const quotient = this.div(other);
+    const truncated = quotient.#fromParts(quotient.#sign, quotient.#int - (quotient.#int % 10n ** BigInt(quotient.#dp > 0 ? 1 : 0)), 0);
+    return this.minus(truncated.times(other));
+  }
+
+  pow(other) {
+    other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
+    if (other.#dp > 0 || other.#sign !== 1) {
+      throw new Error('ExprDecimal pow() supports non-negative integer exponents only');
+    }
+    const exp = Number(other.#int);
+    if (exp > 100) {
+      throw new Error('ExprDecimal pow() exponent too large');
+    }
+    let result = new ExprDecimal(1);
+    for (let i = 0; i < exp; i++) {
+      result = result.times(this);
+    }
+    return result;
+  }
+
+  negated() {
+    const d = new ExprDecimal(this);
+    d.#sign = -d.#sign;
+    if (d.#int === 0n) {d.#sign = 1;}
+    return d;
+  }
+
+  eq(other) {
+    other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
+    const [a, b] = this.#align(other);
+    return a === b;
+  }
+
+  gt(other) {
+    other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
+    const [a, b] = this.#align(other);
+    return a > b;
+  }
+
+  lt(other) {
+    other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
+    const [a, b] = this.#align(other);
+    return a < b;
+  }
+
+  gte(other) {
+    return this.gt(other) || this.eq(other);
+  }
+
+  lte(other) {
+    return this.lt(other) || this.eq(other);
+  }
+
+  toString() {
+    let s = this.#int.toString();
+    const edp = this.#dp;
+
+    const toScientific = (intStr, exponent) => {
+      const coeffInt = intStr[0];
+      const coeffFrac = intStr.slice(1).replace(/0+$/, '');
+      let r = coeffInt;
+      if (coeffFrac) {r += `.${  coeffFrac}`;}
+      r += 'e';
+      r += exponent >= 0 ? '+' : '';
+      r += exponent;
+      return this.#sign === -1 ? `-${  r}` : r;
+    };
+
+    if (edp === 0) {
+      if (s.length > 15) {return toScientific(s, s.length - 1);}
+      return this.#sign === -1 ? `-${  s}` : s;
+    }
+
+    while (s.length <= edp) {s = `0${  s}`;}
+    const dotPos = s.length - edp;
+    const intPartRaw = s.slice(0, dotPos);
+    const intTrimmed = intPartRaw.replace(/^0+/, '') || '0';
+    const fracRaw = s.slice(dotPos);
+
+    if (intTrimmed.length > 15 || (intTrimmed === '0' && fracRaw.replace(/0+$/, '').length > 15)) {
+      const normalized = s.replace(/^0+/, '') || '0';
+      const leadZeros = s.length - normalized.length;
+      return toScientific(normalized, dotPos - leadZeros - 1);
+    }
+
+    const intPart = intPartRaw || '0';
+    const fracPart = fracRaw.replace(/0+$/, '');
+    if (fracPart === '') {
+      return this.#sign === -1 ? `-${  intPart}` : intPart;
+    }
+    return `${this.#sign === -1 ? '-' : ''}${intPart}.${fracPart}`;
+  }
+
+  toNumber() {
+    return Number(this.toString());
+  }
+
+  static isDecimal(value) {
+    return value instanceof ExprDecimal;
+  }
+}
+
+function bigNumber(value) {
+  if (ExprDecimal.isDecimal(value)) {
+    return value;
+  }
+  if (typeof value === 'number' || typeof value === 'string' || typeof value === 'bigint') {
+    return new ExprDecimal(value);
+  }
+  throw new Error('bignumber() expects a number, string, or bigint');
+}
+
+function isBigNumber(v) {
+  return ExprDecimal.isDecimal(v);
+}
+
+function formatBigNumber(v) {
+  if (!ExprDecimal.isDecimal(v)) {
+    return String(v);
+  }
+  return v.toString();
+}
+
 /** @param {any } node*/
 function evaluateAST(node, context = {}) {
   const vars = context.variables;
   const fns = context.functions;
   const units = context.units;
 
-  const isUnitObj = (/** @type {any} */ v) => v && typeof v === 'object' && 'value' in v && 'unit' in v;
+  const isUnitObj = (/** @type {any} */ v) =>
+    v && typeof v === 'object' && 'value' in v && 'unit' in v;
   const isComplex = (/** @type {any} */ v) => v && typeof v === 'object' && 're' in v && 'im' in v;
-  const isSliceNode = (/** @type {any} */ v) => v && typeof v === 'object' && v.type === 'SliceExpression';
-  const isMatrix = (/** @type {any[]} */ v) => Array.isArray(v) && v.length > 0 && v.every(Array.isArray);
+  const isSliceNode = (/** @type {any} */ v) =>
+    v && typeof v === 'object' && v.type === 'SliceExpression';
+  const isMatrix = (/** @type {any[]} */ v) =>
+    Array.isArray(v) && v.length > 0 && v.every(Array.isArray);
   const isMatrixLike = (/** @type {any} */ v) => isMatrix(v) || isDenseMatrixWrapper(v);
-  
+
   const normalizeMatrix = (/** @type {any[]} */ value) => {
     value = unwrapDenseMatrix(value);
     if (isMatrix(value)) {
@@ -501,7 +853,11 @@ function evaluateAST(node, context = {}) {
     throw new Error('Expected matrix-compatible value');
   };
 
-  
+  const nodeError = (/** @type {string} */ msg) => {
+    const pos = node && node.pos !== undefined ? ` at position ${node.pos}` : '';
+    return new Error(`${msg}${pos}`);
+  };
+
   const toOneBasedIndex = (/** @type {unknown} */ value) => {
     if (typeof value !== 'number' || !Number.isInteger(value) || value < 1) {
       throw new Error('Matrix indices must be positive integers');
@@ -510,8 +866,10 @@ function evaluateAST(node, context = {}) {
     return value - 1;
   };
 
-  
-  const resolveSelector = (/** @type {{ start: null | undefined; end: null | undefined; }} */ selector, /** @type {number} */ contextLength) => {
+  const resolveSelector = (
+    /** @type {{ start: null | undefined; end: null | undefined; }} */ selector,
+    /** @type {number} */ contextLength
+  ) => {
     if (isSliceNode(selector)) {
       const startValue =
         selector.start === null || selector.start === undefined
@@ -538,7 +896,6 @@ function evaluateAST(node, context = {}) {
     return [toOneBasedIndex(evaluateAST(selector, context))];
   };
 
-  
   const indexMatrix = (/** @type {any} */ matrix, /** @type {string | any[]} */ selectors) => {
     const target = normalizeMatrix(matrix);
 
@@ -585,8 +942,11 @@ function evaluateAST(node, context = {}) {
     return values;
   };
 
-  
-  const assignMatrixIndex = (/** @type {any[]} */ matrix, /** @type {string | any[]} */ selectors, /** @type {any} */ value) => {
+  const assignMatrixIndex = (
+    /** @type {any[]} */ matrix,
+    /** @type {string | any[]} */ selectors,
+    /** @type {any} */ value
+  ) => {
     const target = isMatrix(matrix)
       ? matrix.map((/** @type {any} */ row) => [...row])
       : Array.isArray(matrix)
@@ -610,9 +970,11 @@ function evaluateAST(node, context = {}) {
         throw new Error('Assigned row count does not match slice');
       }
 
-      rowIndexes.forEach((/** @type {string | number} */ rowIndex, /** @type {string | number} */ index) => {
-        target[rowIndex] = [...rowsValue[index]];
-      });
+      rowIndexes.forEach(
+        (/** @type {string | number} */ rowIndex, /** @type {string | number} */ index) => {
+          target[rowIndex] = [...rowsValue[index]];
+        }
+      );
 
       return {
         updatedMatrix: target,
@@ -623,7 +985,11 @@ function evaluateAST(node, context = {}) {
       };
     }
 
-    const maxCols = Math.max(...target.map((/** @type {string | any[]} */ row) => row.length), 0, 1);
+    const maxCols = Math.max(
+      ...target.map((/** @type {string | any[]} */ row) => row.length),
+      0,
+      1
+    );
     const colIndexes = resolveSelector(colSelector, maxCols);
     const normalizedValue = normalizeMatrix(value);
 
@@ -637,22 +1003,34 @@ function evaluateAST(node, context = {}) {
       }
     });
 
-    rowIndexes.forEach((/** @type {string | number} */ rowIndex, /** @type {string | number} */ rowOffset) => {
-      if (!target[rowIndex]) {
-        target[rowIndex] = [];
-      }
+    rowIndexes.forEach(
+      (/** @type {string | number} */ rowIndex, /** @type {string | number} */ rowOffset) => {
+        if (!target[rowIndex]) {
+          target[rowIndex] = [];
+        }
 
-      colIndexes.forEach((/** @type {string | number} */ colIndex, /** @type {string | number} */ colOffset) => {
-        target[rowIndex][colIndex] = normalizedValue[rowOffset][colOffset];
-      });
-    });
+        colIndexes.forEach(
+          (/** @type {string | number} */ colIndex, /** @type {string | number} */ colOffset) => {
+            target[rowIndex][colIndex] = normalizedValue[rowOffset][colOffset];
+          }
+        );
+      }
+    );
 
     return {
       updatedMatrix: target,
       selectionResult:
         rowIndexes.length === 1
-          ? [colIndexes.map((/** @type {string | number} */ colIndex) => target[rowIndexes[0]][colIndex])]
-          : rowIndexes.map((/** @type {string | number} */ rowIndex) => colIndexes.map((/** @type {string | number} */ colIndex) => target[rowIndex][colIndex])),
+          ? [
+              colIndexes.map(
+                (/** @type {string | number} */ colIndex) => target[rowIndexes[0]][colIndex]
+              ),
+            ]
+          : rowIndexes.map((/** @type {string | number} */ rowIndex) =>
+              colIndexes.map(
+                (/** @type {string | number} */ colIndex) => target[rowIndex][colIndex]
+              )
+            ),
     };
   };
 
@@ -661,11 +1039,15 @@ function evaluateAST(node, context = {}) {
   const multiplyMatrices = (/** @type {any} */ left, /** @type {any} */ right) => {
     if (isScalar(left)) {
       const b = normalizeMatrix(right);
-      return b.map((/** @type {any[]} */ row) => row.map((/** @type {number} */ v) => Number(left) * v));
+      return b.map((/** @type {any[]} */ row) =>
+        row.map((/** @type {number} */ v) => Number(left) * v)
+      );
     }
     if (isScalar(right)) {
       const a = normalizeMatrix(left);
-      return a.map((/** @type {any[]} */ row) => row.map((/** @type {number} */ v) => v * Number(right)));
+      return a.map((/** @type {any[]} */ row) =>
+        row.map((/** @type {number} */ v) => v * Number(right))
+      );
     }
     const a = normalizeMatrix(left);
     const b = normalizeMatrix(right);
@@ -676,43 +1058,54 @@ function evaluateAST(node, context = {}) {
 
     return a.map((/** @type {any[]} */ row) =>
       b[0].map((/** @type {any} */ _, /** @type {string | number} */ colIndex) =>
-        row.reduce((/** @type {number} */ sum, /** @type {number} */ value, /** @type {string | number} */ rowIndex) => sum + value * b[rowIndex][colIndex], 0)
+        row.reduce(
+          (
+            /** @type {number} */ sum,
+            /** @type {number} */ value,
+            /** @type {string | number} */ rowIndex
+          ) => sum + value * b[rowIndex][colIndex],
+          0
+        )
       )
     );
   };
 
-  
   const addMatrices = (/** @type {any} */ left, /** @type {any} */ right) => {
     const a = normalizeMatrix(left);
     const b = normalizeMatrix(right);
     if (a.length !== b.length || a[0].length !== b[0].length) {
       throw new Error('Matrix dimensions must match for addition');
     }
-    return a.map((/** @type {any[]} */ row, /** @type {string | number} */ i) => row.map((/** @type {any} */ v, /** @type {string | number} */ j) => v + b[i][j]));
+    return a.map((/** @type {any[]} */ row, /** @type {string | number} */ i) =>
+      row.map((/** @type {any} */ v, /** @type {string | number} */ j) => v + b[i][j])
+    );
   };
 
-  
   const subtractMatrices = (/** @type {any} */ left, /** @type {any} */ right) => {
     const a = normalizeMatrix(left);
     const b = normalizeMatrix(right);
     if (a.length !== b.length || a[0].length !== b[0].length) {
       throw new Error('Matrix dimensions must match for subtraction');
     }
-    return a.map((/** @type {any[]} */ row, /** @type {string | number} */ i) => row.map((/** @type {number} */ v, /** @type {string | number} */ j) => v - b[i][j]));
+    return a.map((/** @type {any[]} */ row, /** @type {string | number} */ i) =>
+      row.map((/** @type {number} */ v, /** @type {string | number} */ j) => v - b[i][j])
+    );
   };
 
-  
   const identityMatrix = (/** @type {any} */ n) =>
-    Array.from({ length: n }, (_, i) =>
-      Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))
-    );
+    Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? 1 : 0)));
 
-  
   const powerMatrix = (/** @type {any} */ left, /** @type {any} */ right) => {
     const a = normalizeMatrix(left);
-    if (a.length !== a[0].length) {throw new Error('Matrix power requires a square matrix');}
-    if (!Number.isInteger(right) || right < 0) {throw new Error('Matrix power requires a non-negative integer exponent');}
-    if (right === 0) {return identityMatrix(a.length);}
+    if (a.length !== a[0].length) {
+      throw new Error('Matrix power requires a square matrix');
+    }
+    if (!Number.isInteger(right) || right < 0) {
+      throw new Error('Matrix power requires a non-negative integer exponent');
+    }
+    if (right === 0) {
+      return identityMatrix(a.length);
+    }
     let result = a;
     for (let i = 1; i < right; i++) {
       result = multiplyMatrices(result, a);
@@ -720,7 +1113,6 @@ function evaluateAST(node, context = {}) {
     return result;
   };
 
-  
   const toComplex = (/** @type {any} */ value) => {
     if (isComplex(value)) {
       return value;
@@ -731,13 +1123,11 @@ function evaluateAST(node, context = {}) {
     throw new Error('Complex arithmetic only supports numbers');
   };
 
-  
   const fromImaginary = (/** @type {any} */ value) => ({ re: 0, im: value });
 
-  
-  const simplifyComplex = (/** @type {{ re: any; im: any; }} */ value) => (value.im === 0 ? value.re : value);
+  const simplifyComplex = (/** @type {{ re: any; im: any; }} */ value) =>
+    value.im === 0 ? value.re : value;
 
-  
   const createFunctionScope = (/** @type {any[]} */ params, /** @type {any[]} */ args) => {
     const scopedValues = {};
 
@@ -748,8 +1138,11 @@ function evaluateAST(node, context = {}) {
     return scopedValues;
   };
 
-  
-  const evalComplexBinary = (/** @type {any} */ operator, /** @type {any} */ left, /** @type {any} */ right) => {
+  const evalComplexBinary = (
+    /** @type {any} */ operator,
+    /** @type {any} */ left,
+    /** @type {any} */ right
+  ) => {
     const a = toComplex(left);
     const b = toComplex(right);
 
@@ -782,7 +1175,6 @@ function evaluateAST(node, context = {}) {
 
   // EVALUATOR
   switch (node.type) {
-
     case 'Literal':
       return node.value;
 
@@ -804,39 +1196,50 @@ function evaluateAST(node, context = {}) {
         const right = evaluateAST(node.right, context);
         const op = node.operator.slice(0, -1);
         switch (op) {
-          case '+': value = current + right; break;
-          case '-': value = current - right; break;
-          case '*': value = current * right; break;
-          case '/': value = current / right; break;
-          case '%': value = current % right; break;
-          default: throw new Error(`Unknown compound operator ${node.operator}`);
-        }
-      } else {
-        value = evaluateAST(node.right, context);
-      }
-
-      if (node.left.type === 'Identifier') {
-        vars.set(node.left.name, value);
-        if (node.right.type === 'ArrayExpression') {
-          return wrapDenseMatrix(unwrapDenseMatrix(value));
-        }
-        return value;
-      }
-
-      if (node.left.type === 'IndexExpression' && node.left.object.type === 'Identifier') {
-        const currentValue = vars.get(node.left.object.name);
-        const assigned = assignMatrixIndex(currentValue, node.left.selectors, value);
-        vars.set(node.left.object.name, assigned.updatedMatrix);
-        return assigned.selectionResult;
-      }
-
-      throw new Error('Invalid assignment target');
+          case '+':
+            value = current + right;
+            break;
+          case '-':
+            value = current - right;
+            break;
+          case '*':
+            value = current * right;
+            break;
+          case '/':
+            value = current / right;
+            break;
+          case '%':
+            value = current % right;
+            break;
+      default:
+        throw nodeError(`Unknown compound operator ${node.operator}`);
     }
+  } else {
+    value = evaluateAST(node.right, context);
+  }
+
+  if (node.left.type === 'Identifier') {
+    vars.set(node.left.name, value);
+    if (node.right.type === 'ArrayExpression') {
+      return wrapDenseMatrix(unwrapDenseMatrix(value));
+    }
+    return value;
+  }
+
+  if (node.left.type === 'IndexExpression' && node.left.object.type === 'Identifier') {
+    const currentValue = vars.get(node.left.object.name);
+    const assigned = assignMatrixIndex(currentValue, node.left.selectors, value);
+    vars.set(node.left.object.name, assigned.updatedMatrix);
+    return assigned.selectionResult;
+  }
+
+  throw nodeError('Invalid assignment target');
+}
 
     // User-defined function via f(a,b)=expr: closure evaluates body in a new scope with params bound
     case 'FunctionAssignmentExpression': {
       if (node.operator !== '=') {
-        throw new Error(`Operator ${node.operator} is not supported for function definitions`);
+        throw nodeError(`Operator ${node.operator} is not supported for function definitions`);
       }
 
       const fn = (/** @type {any} */ ...args) => {
@@ -854,12 +1257,14 @@ function evaluateAST(node, context = {}) {
 
       switch (node.operator) {
         case '-':
-          return isComplex(val) ? simplifyComplex({ re: -val.re, im: -val.im }) : -val;
+          if (isBigNumber(val)) {return val.negated();}
+          if (isComplex(val)) {return simplifyComplex({ re: -val.re, im: -val.im });}
+          return -val;
         case '!':
           return !val;
       }
 
-      throw new Error(`Unknown unary operator ${node.operator}`);
+      throw nodeError(`Unknown unary operator ${node.operator}`);
     }
 
     // Dispatch order: unit arithmetic -> matrix arithmetic -> complex arithmetic -> scalar arithmetic
@@ -876,7 +1281,11 @@ function evaluateAST(node, context = {}) {
         return units.compute(node.operator, left, right);
       }
 
-      if (isMatrixLike(left) || isMatrixLike(right) || (node.operator === '*' && (Array.isArray(left) || Array.isArray(right)))) {
+      if (
+        isMatrixLike(left) ||
+        isMatrixLike(right) ||
+        (node.operator === '*' && (Array.isArray(left) || Array.isArray(right)))
+      ) {
         switch (node.operator) {
           case '+':
             return addMatrices(left, right);
@@ -887,7 +1296,43 @@ function evaluateAST(node, context = {}) {
           case '^':
             return powerMatrix(left, right);
           default:
-            throw new Error(`Operator ${node.operator} not supported for matrices`);
+            throw nodeError(`Operator ${node.operator} not supported for matrices`);
+        }
+      }
+
+      if (isFraction(left) || isFraction(right)) {
+        const a = isFraction(left) ? left : fraction(left, 1);
+        const b = isFraction(right) ? right : fraction(right, 1);
+        switch (node.operator) {
+          case '+': return addFrac(a, b);
+          case '-': return subFrac(a, b);
+          case '*': return mulFrac(a, b);
+          case '/': return divFrac(a, b);
+          case '^': {
+            const p = powFrac(a, right);
+            if (p) {return p;}
+            throw nodeError('Fraction power requires non-negative integer exponent');
+          }
+          default: throw nodeError(`Operator ${node.operator} not supported for fractions`);
+        }
+      }
+
+      if (isBigNumber(left) || isBigNumber(right)) {
+        const a = isBigNumber(left) ? left : bigNumber(left);
+        const b = isBigNumber(right) ? right : bigNumber(right);
+        switch (node.operator) {
+          case '+': return a.plus(b);
+          case '-': return a.minus(b);
+          case '*': return a.times(b);
+          case '/': return a.div(b);
+          case '%': return a.mod(b);
+          case '^': return a.pow(b);
+          case '>': return a.gt(b);
+          case '<': return a.lt(b);
+          case '>=': return a.gte(b);
+          case '<=': return a.lte(b);
+          case '==': return a.eq(b);
+          default: throw nodeError(`Operator ${node.operator} not supported for BigNumber`);
         }
       }
 
@@ -921,7 +1366,7 @@ function evaluateAST(node, context = {}) {
           return left === right;
       }
 
-      throw new Error(`Unknown operator ${node.operator}`);
+      throw nodeError(`Unknown operator ${node.operator}`);
     }
 
     // Short-circuit: && returns first falsy, || returns first truthy, ?? returns first non-nullish
@@ -940,7 +1385,7 @@ function evaluateAST(node, context = {}) {
         return left ?? evaluateAST(node.right, context);
       }
 
-      throw new Error(`Unknown logical operator ${node.operator}`);
+      throw nodeError(`Unknown logical operator ${node.operator}`);
     }
 
     // Range [start..end] inclusive: returns array of integers from floor(start) to floor(end)
@@ -948,7 +1393,7 @@ function evaluateAST(node, context = {}) {
       const start = evaluateAST(node.start, context);
       const end = evaluateAST(node.end, context);
       if (typeof start !== 'number' || typeof end !== 'number') {
-        throw new Error('Range requires numeric bounds');
+        throw nodeError('Range requires numeric bounds');
       }
       const result = [];
       for (let i = Math.floor(start); i <= Math.floor(end); i++) {
@@ -974,7 +1419,9 @@ function evaluateAST(node, context = {}) {
       const rawArgs = node.arguments.map((/** @type {{ type: string; argument: any; }} */ arg) => {
         if (arg.type === 'SpreadElement') {
           const val = evaluateAST(arg.argument, context);
-          if (!Array.isArray(val)) {throw new Error('Spread operator requires an array');}
+          if (!Array.isArray(val)) {
+            throw new Error('Spread operator requires an array');
+          }
           return { spread: true, values: val };
         }
         return { spread: false, value: evaluateAST(arg, context) };
@@ -1000,7 +1447,10 @@ function evaluateAST(node, context = {}) {
         const fnName = node.right.callee.name;
         const fn = fns.get(fnName);
 
-        const args = [leftVal, ...node.right.arguments.map((/** @type {any} */ arg) => evaluateAST(arg, context))];
+        const args = [
+          leftVal,
+          ...node.right.arguments.map((/** @type {any} */ arg) => evaluateAST(arg, context)),
+        ];
 
         return fn(...args);
       }
@@ -1010,7 +1460,7 @@ function evaluateAST(node, context = {}) {
         return fn(leftVal);
       }
 
-      throw new Error('Invalid pipeline target');
+      throw nodeError('Invalid pipeline target');
     }
 
     // Unit conversion: value fromUnit -> toUnit
@@ -1018,11 +1468,11 @@ function evaluateAST(node, context = {}) {
       const from = evaluateAST(node.from, context);
 
       if (!isUnitObj(from)) {
-        throw new Error('Left side must be a unit value');
+        throw nodeError('Left side must be a unit value');
       }
 
       if (!units) {
-        throw new Error('Unit system not available');
+        throw nodeError('Unit system not available');
       }
 
       return units.convert(from.value, from.unit, node.to);
@@ -1059,7 +1509,7 @@ function evaluateAST(node, context = {}) {
     }
 
     default:
-      throw new Error(`Unknown AST node type: ${node.type}`);
+      throw nodeError(`Unknown AST node type: ${node.type}`);
   }
 }
 
@@ -1082,7 +1532,7 @@ function createContext({ variables, functions, units, evaluate }) {
     functions: functions,
     units: units,
     evaluate,
-    
+
     withScope(scope = {}) {
       const tempVars = {
         ...variables.all?.(),
@@ -1093,8 +1543,8 @@ function createContext({ variables, functions, units, evaluate }) {
         evaluate,
         units,
         variables: {
-          get: (  /** @type {string | number} */ k) => tempVars[k],
-          set: (  /** @type {string | number} */ k,   /** @type {any} */ v) => (tempVars[k] = v),
+          get: (/** @type {string | number} */ k) => tempVars[k],
+          set: (/** @type {string | number} */ k, /** @type {any} */ v) => (tempVars[k] = v),
           all: () => tempVars,
         },
       });
@@ -1106,7 +1556,6 @@ const isValidNumberPair = (/** @type {any} */ a, /** @type {any} */ b) =>
   typeof a === typeof b && (typeof a === 'number' || typeof a === 'bigint');
 
 const mathOperations = Object.freeze({
-  
   power: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       return a ** b;
@@ -1114,7 +1563,6 @@ const mathOperations = Object.freeze({
     throw new Error('Invalid types for ^');
   },
 
-  
   multiply: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       return a * b;
@@ -1122,7 +1570,6 @@ const mathOperations = Object.freeze({
     throw new Error('Invalid types for *');
   },
 
-  
   divide: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       if (b === 0) {
@@ -1133,7 +1580,6 @@ const mathOperations = Object.freeze({
     throw new Error('Invalid types for /');
   },
 
-  
   add: function (/** @type {string} */ a, /** @type {string} */ b) {
     if (isValidNumberPair(a, b)) {
       return a + b;
@@ -1143,7 +1589,7 @@ const mathOperations = Object.freeze({
     }
     throw new Error('Invalid types for +');
   },
-  
+
   subtract: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       return a - b;
@@ -1151,7 +1597,6 @@ const mathOperations = Object.freeze({
     throw new Error('Invalid types for -');
   },
 
-  
   modulus: function (/** @type {number} */ a, /** @type {number} */ b) {
     if (isValidNumberPair(a, b)) {
       return a % b;
@@ -1180,7 +1625,6 @@ function createUnitsStore(initial = {}) {
 
           // Avoid duplicate like "m" vs "meter"
           if (unitLower !== keyLower) {
-
             if (unitLower.split(/\s+/).length === 1) {
               result.add(unitLower);
             }
@@ -1202,7 +1646,6 @@ function createUnitsStore(initial = {}) {
     return Array.from(result);
   }
 
-  
   /**
    * @param {string} input
    */
@@ -1226,7 +1669,6 @@ function createUnitsStore(initial = {}) {
     return null;
   }
 
-  
   /**
    * @param {number} value
    * @param {any} fromUnit
@@ -1256,22 +1698,22 @@ function createUnitsStore(initial = {}) {
 
   // Public API
   return {
-    
     // Get all units
     getUnits: () => units,
 
-  
     setUnits: (/** @type {{}} */ newUnits) => {
       units = { ...newUnits };
     },
 
-    
     updateType: (/** @type {string | number} */ type, /** @type {any} */ data) => {
       units[type] = { ...units[type], ...data };
     },
 
-    
-    addUnit: (/** @type {string | number} */ type, /** @type {string | number} */ key, /** @type {any} */ unitObj) => {
+    addUnit: (
+      /** @type {string | number} */ type,
+      /** @type {string | number} */ key,
+      /** @type {any} */ unitObj
+    ) => {
       if (!units[type]) {
         units[type] = {};
       }
@@ -1284,7 +1726,8 @@ function createUnitsStore(initial = {}) {
      * @param {{ unit: any; value: number; }} right
      */
     compute(op, left, right) {
-      const isUnit = (/** @type {any} */ v) => v && typeof v === 'object' && 'value' in v && 'unit' in v;
+      const isUnit = (/** @type {any} */ v) =>
+        v && typeof v === 'object' && 'value' in v && 'unit' in v;
 
       const apply = (/** @type {any} */ a, /** @type {any} */ b) => {
         switch (op) {
@@ -1365,7 +1808,6 @@ function createUnitsStore(initial = {}) {
 
 // @ts-check
 const globalUnits = {
-
   length: {
     m: { value: 1, unit: 'meter', symbol: 'm' },
     cm: { value: 0.01, unit: 'centimeter', symbol: 'cm' },
@@ -1572,7 +2014,6 @@ const globalUnits = {
     grad: { value: 0.9, unit: 'grad', symbol: 'grad', note: '1 grad = 0.9°' },
   },
   radiation: {
-
     Gy: { value: 1, unit: 'gray', symbol: 'Gy', note: 'Absorbed dose: 1 Gy = 1 J/kg' },
     mGy: { value: 0.001, unit: 'milligray', symbol: 'mGy' },
     rad: { value: 0.01, unit: 'rad', symbol: 'rad', note: '1 rad = 0.01 Gy' },
@@ -1589,7 +2030,7 @@ const globalUnits = {
     GBq: { value: 1e9, unit: 'gigabecquerel', symbol: 'GBq' },
     Ci: { value: 3.7e10, unit: 'curie', symbol: 'Ci', note: '1 Ci = 3.7 x 10¹⁰ decays per second' },
     mCi: { value: 3.7e7, unit: 'millicurie', symbol: 'mCi' },
-  }
+  },
 };
 
 const validVarName = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
@@ -1602,13 +2043,11 @@ function createVarStore(initial = {}) {
   }
 
   return {
-    
     /**
      * @param {string} name
      * @param {number | undefined} value
      */
     set(name, value, { override = true } = {}) {
-
       if (typeof name !== 'string' || !name) {
         throw new Error('Variable name must be a non-empty string');
       }
@@ -1630,7 +2069,6 @@ function createVarStore(initial = {}) {
       store[name] = value;
     },
 
-    
     /**
      * @param {string | number} name
      */
@@ -1638,7 +2076,6 @@ function createVarStore(initial = {}) {
       return store[name];
     },
 
-    
     /**
      * @param {any} name
      */
@@ -1646,7 +2083,6 @@ function createVarStore(initial = {}) {
       return Object.prototype.hasOwnProperty.call(store, name);
     },
 
-    
     /**
      * @param {string | number} name
      */
@@ -1654,24 +2090,20 @@ function createVarStore(initial = {}) {
       delete store[name];
     },
 
-    
     all() {
       return { ...store };
     },
 
-    
     clear() {
       store = Object.create(null);
     },
 
-    
     merge(obj = {}) {
       for (const key in obj) {
         store[key] = obj[key];
       }
     },
 
-    
     clone() {
       return createVarStore(store);
     },
@@ -1689,12 +2121,10 @@ function createFunctionRegistry(initial = {}) {
   }
 
   return {
-    
     getAllFunctionsName() {
       return Object.keys(store);
     },
 
-    
     /**
      * @param {string} name
      * @param {any} fn
@@ -1711,7 +2141,6 @@ function createFunctionRegistry(initial = {}) {
       store[name] = fn;
     },
 
-    
     /**
      * @param {string} name
      */
@@ -1719,7 +2148,6 @@ function createFunctionRegistry(initial = {}) {
       return store[name];
     },
 
-    
     /**
      * @param {any} name
      */
@@ -1727,7 +2155,6 @@ function createFunctionRegistry(initial = {}) {
       return Object.prototype.hasOwnProperty.call(store, name);
     },
 
-    
     /**
      * @param {string | number} name
      */
@@ -1735,19 +2162,16 @@ function createFunctionRegistry(initial = {}) {
       delete store[name];
     },
 
-    
     all() {
       return { ...store };
     },
 
-    
     clear() {
       for (const key in store) {
         delete store[key];
       }
     },
 
-    
     extend(formulas = {}) {
       for (const name in formulas) {
         if (typeof formulas[name] === 'function') {
@@ -1756,7 +2180,6 @@ function createFunctionRegistry(initial = {}) {
       }
     },
 
-    
     clone() {
       return createFunctionRegistry(store);
     },
@@ -1802,13 +2225,19 @@ function determinant(matrix) {
   }
 
   // Laplace expansion: sum of (-1)^col * M[0][col] * det(minor)
-  return matrix[0].reduce((/** @type {number} */ sum, /** @type {number} */ value, /** @type {number} */ columnIndex) => {
-    const minor = matrix.slice(1).map((row) => row.filter((/** @type {any} */ _, /** @type {number} */ index) => index !== columnIndex));
-    const cofactor = columnIndex % 2 === 0 ? value : -value;
-    return sum + cofactor * determinant(minor);
-  }, 0);
+  return matrix[0].reduce(
+    (/** @type {number} */ sum, /** @type {number} */ value, /** @type {number} */ columnIndex) => {
+      const minor = matrix
+        .slice(1)
+        .map((row) =>
+          row.filter((/** @type {any} */ _, /** @type {number} */ index) => index !== columnIndex)
+        );
+      const cofactor = columnIndex % 2 === 0 ? value : -value;
+      return sum + cofactor * determinant(minor);
+    },
+    0
+  );
 }
-
 
 /** @param {any} value */
 function asMatrixData(value) {
@@ -1818,7 +2247,6 @@ function asMatrixData(value) {
   }
   return data;
 }
-
 
 /**
  * @param {any[]} coefficients
@@ -1866,7 +2294,6 @@ function solveLinearSystem(coefficients, constants) {
 
   return augmented.map((row) => row[n]);
 }
-
 
 /** @param {any} input */
 function lupDecomposition(input) {
@@ -1928,7 +2355,6 @@ function lupDecomposition(input) {
   };
 }
 
-
 /**
  * @param {any} aInput
  * @param {{ exprify: string; data: any; size: number[]; }} bInput
@@ -1964,7 +2390,6 @@ function linearSolve(aInput, bInput) {
 
   return wrapDenseMatrix(x.map((value) => [value]));
 }
-
 
 /**
  * @param {any} aInput
@@ -2008,7 +2433,6 @@ function solveLyapunov(aInput, qInput) {
   return wrapDenseMatrix(X);
 }
 
-
 /**
  * @param {any[]} coefficients
  * @param {number} x
@@ -2016,7 +2440,6 @@ function solveLyapunov(aInput, qInput) {
 function evaluatePolynomial(coefficients, x) {
   return coefficients.reduce((sum, coefficient, index) => sum + coefficient * x ** index, 0);
 }
-
 
 /**
  * @param {any[]} coefficients
@@ -2037,7 +2460,6 @@ function syntheticDivide(coefficients, root) {
   };
 }
 
-
 /**
  * @param {any[]} coefficients
  */
@@ -2051,7 +2473,6 @@ function solveQuadratic(coefficients) {
   const sqrtDisc = Math.sqrt(discriminant);
   return [(-b + sqrtDisc) / (2 * a), (-b - sqrtDisc) / (2 * a)];
 }
-
 
 /**
  * @param {any[]} coefficients
@@ -2099,7 +2520,6 @@ function polynomialRoots(...coefficients) {
   throw new Error('polynomialRoot() currently supports degree up to 3');
 }
 
-
 /**
  * @param {any[]} a
  * @param {any[]} b
@@ -2108,14 +2528,12 @@ function dotProduct(a, b) {
   return a.reduce((sum, value, index) => sum + value * b[index], 0);
 }
 
-
 /**
  * @param {any[]} vector
  */
 function vectorNorm(vector) {
   return Math.sqrt(dotProduct(vector, vector));
 }
-
 
 /**
  * @param {any[]} vector
@@ -2125,24 +2543,24 @@ function scaleVector(vector, scalar) {
   return vector.map((value) => value * scalar);
 }
 
-
-
 /**
  * @param {any} a
  * @param {any} b
  */
 function subtractVectors(a, b) {
-  return a.map((/** @type {number} */ value, /** @type {string | number} */ index) => value - b[index]);
+  return a.map(
+    (/** @type {number} */ value, /** @type {string | number} */ index) => value - b[index]
+  );
 }
-
 
 /**
  * @param {any[]} matrix
  */
 function transpose(matrix) {
-  return matrix[0].map((/** @type {any} */ _, /** @type {string | number} */ colIndex) => matrix.map((row) => row[colIndex]));
+  return matrix[0].map((/** @type {any} */ _, /** @type {string | number} */ colIndex) =>
+    matrix.map((row) => row[colIndex])
+  );
 }
-
 
 /**
  * @param {any} input
@@ -2175,7 +2593,7 @@ function qrDecomposition(input) {
   }
 
   for (let basisIndex = 0; qColumns.length < rowCount && basisIndex < rowCount; basisIndex++) {
-    let candidate =  (Array.from({ length: rowCount }, (_, index) => (index === basisIndex ? 1 : 0)));
+    let candidate = Array.from({ length: rowCount }, (_, index) => (index === basisIndex ? 1 : 0));
 
     for (const column of qColumns) {
       const projection = dotProduct(column, candidate);
@@ -2205,7 +2623,6 @@ function qrDecomposition(input) {
   };
 }
 
-
 /**
  * @param {string} expression
  */
@@ -2217,7 +2634,6 @@ function splitTerms(expression) {
 
   return normalized.replace(/-/g, '+-').split('+').filter(Boolean);
 }
-
 
 /**
  * @param {string} expression
@@ -2271,7 +2687,6 @@ function parsePolynomial(expression, variable) {
   return coefficients;
 }
 
-
 /**
  * @param {any[] | Map<any, any>} coefficients
  * @param {string} variable
@@ -2308,7 +2723,6 @@ function formatPolynomial(coefficients, variable) {
     .join(' ');
 }
 
-
 /**
  * @param {string} expression
  */
@@ -2319,7 +2733,6 @@ function simplifyExpression(expression) {
   const coefficients = parsePolynomial(expression, variable);
   return formatPolynomial(coefficients, variable);
 }
-
 
 /**
  * @param {string} expression
@@ -2339,7 +2752,6 @@ function derivativeExpression(expression, variable) {
   return formatPolynomial(derived, variable);
 }
 
-
 /**
  * @param {number} a
  * @param {number} b
@@ -2352,7 +2764,6 @@ function _gcd(a, b) {
   }
   return a;
 }
-
 
 /**
  * @param {any} n
@@ -2390,7 +2801,6 @@ function _gamma(n) {
   return Math.sqrt(2 * Math.PI) * t ** (n + 0.5) * Math.exp(-t) * x;
 }
 
-
 /**
  * @param {any} n
  */
@@ -2399,7 +2809,6 @@ function _identity(n) {
     Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))
   );
 }
-
 
 /**
  * @param {any[]} matrix
@@ -2411,7 +2820,9 @@ function _inverse(matrix) {
 
   if (n === 2) {
     const det = data[0][0] * data[1][1] - data[0][1] * data[1][0];
-    if (det === 0) {throw new Error('Matrix is singular');}
+    if (det === 0) {
+      throw new Error('Matrix is singular');
+    }
     return wrapDenseMatrix([
       [data[1][1] / det, -data[0][1] / det],
       [-data[1][0] / det, data[0][0] / det],
@@ -2430,7 +2841,6 @@ function _inverse(matrix) {
   return wrapDenseMatrix(result);
 }
 
-
 /**
  * @param {any} matrix
  */
@@ -2441,24 +2851,34 @@ function _rref(matrix) {
   const colCount = data[0].length;
 
   for (let r = 0; r < rowCount; r++) {
-    if (lead >= colCount) {break;}
+    if (lead >= colCount) {
+      break;
+    }
     let i = r;
     while (Math.abs(data[i][lead]) < 1e-12) {
       i++;
       if (i === rowCount) {
         i = r;
         lead++;
-        if (lead >= colCount) {break;}
+        if (lead >= colCount) {
+          break;
+        }
       }
     }
-    if (lead >= colCount) {break;}
+    if (lead >= colCount) {
+      break;
+    }
     [data[r], data[i]] = [data[i], data[r]];
     const pivot = data[r][lead];
-    for (let j = 0; j < colCount; j++) {data[r][j] /= pivot;}
+    for (let j = 0; j < colCount; j++) {
+      data[r][j] /= pivot;
+    }
     for (let i = 0; i < rowCount; i++) {
       if (i !== r) {
         const factor = data[i][lead];
-        for (let j = 0; j < colCount; j++) {data[i][j] -= factor * data[r][j];}
+        for (let j = 0; j < colCount; j++) {
+          data[i][j] -= factor * data[r][j];
+        }
       }
     }
     lead++;
@@ -2466,19 +2886,13 @@ function _rref(matrix) {
   return wrapDenseMatrix(data);
 }
 
-
 /**
  * @param {any[]} a
  * @param {any[]} b
  */
 function _cross(a, b) {
-  return [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0],
-  ];
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 }
-
 
 /**
  * @param {any} matrix
@@ -2490,15 +2904,21 @@ function _eig2x2(matrix) {
   const trace = a + d;
   const det = a * d - b * c;
   const disc = trace * trace - 4 * det;
-  if (disc < 0) {throw new Error('Complex eigenvalues not supported');}
+  if (disc < 0) {
+    throw new Error('Complex eigenvalues not supported');
+  }
   const sqrtDisc = Math.sqrt(disc);
   const lambda1 = (trace + sqrtDisc) / 2;
   const lambda2 = (trace - sqrtDisc) / 2;
 
   // Solve (A - lambda*I)v = 0: pick non-zero row to solve for v1:v2 ratio
   const eigenvec = (/** @type {number} */ lambda) => {
-    if (Math.abs(b) > 1e-12) {return [1, (lambda - a) / b];}
-    if (Math.abs(c) > 1e-12) {return [(lambda - d) / c, 1];}
+    if (Math.abs(b) > 1e-12) {
+      return [1, (lambda - a) / b];
+    }
+    if (Math.abs(c) > 1e-12) {
+      return [(lambda - d) / c, 1];
+    }
     return [1, 0];
   };
 
@@ -2516,7 +2936,6 @@ function _eig2x2(matrix) {
   };
 }
 
-
 /**
  * @param {any[]} matrix
  */
@@ -2528,13 +2947,19 @@ function _cholesky(matrix) {
 
   for (let j = 0; j < n; j++) {
     let sum = 0;
-    for (let k = 0; k < j; k++) {sum += L[j][k] * L[j][k];}
+    for (let k = 0; k < j; k++) {
+      sum += L[j][k] * L[j][k];
+    }
     const val = data[j][j] - sum;
-    if (val <= 0) {throw new Error('Matrix is not positive definite');}
+    if (val <= 0) {
+      throw new Error('Matrix is not positive definite');
+    }
     L[j][j] = Math.sqrt(val);
     for (let i = j + 1; i < n; i++) {
       sum = 0;
-      for (let k = 0; k < j; k++) {sum += L[i][k] * L[j][k];}
+      for (let k = 0; k < j; k++) {
+        sum += L[i][k] * L[j][k];
+      }
       L[i][j] = (data[i][j] - sum) / L[j][j];
     }
   }
@@ -2594,7 +3019,18 @@ function _svd(matrix) {
 }
 
 const internalFunctions = {
-  
+  fraction: (/** @type {number} */ n, /** @type {number} */ d) => fraction(n, d),
+
+  numer: (/** @type {any} */ v) => numer(v),
+
+  denom: (/** @type {any} */ v) => denom(v),
+
+  isFraction: (/** @type {any} */ v) => isFraction(v),
+
+  bignumber: (/** @type {any} */ n) => bigNumber(n),
+
+  isBigNumber: (/** @type {any} */ v) => isBigNumber(v),
+
   max: (/** @type {any[]} */ ...args) => {
     if (!args.length) {
       throw new Error('max() requires arguments');
@@ -2602,7 +3038,6 @@ const internalFunctions = {
     return Math.max(...args);
   },
 
-  
   min: (/** @type {any[]} */ ...args) => {
     if (!args.length) {
       throw new Error('min() requires arguments');
@@ -2610,19 +3045,14 @@ const internalFunctions = {
     return Math.min(...args);
   },
 
-  
   abs: (/** @type {number} */ x) => Math.abs(x),
 
-  
   round: (/** @type {number} */ x) => Math.round(x),
 
-  
   floor: (/** @type {number} */ x) => Math.floor(x),
 
-  
   ceil: (/** @type {number} */ x) => Math.ceil(x),
 
-  
   sqrt: (/** @type {number} */ x) => {
     if (x < 0) {
       throw new Error('sqrt() domain error');
@@ -2630,59 +3060,67 @@ const internalFunctions = {
     return Math.sqrt(x);
   },
 
-  
   pow: (/** @type {number} */ a, /** @type {number} */ b) => a ** b,
-  
+
   det: (/** @type {any[]} */ matrix) => determinant(matrix),
-  
+
   polynomialRoot: (/** @type {any} */ ...coefficients) => polynomialRoots(...coefficients),
-  
-  lsolve: (/** @type {any} */ a, /** @type {{ exprify: string; data: any; size: number[]; }} */ b) => linearSolve(a, b),
-  
+
+  lsolve: (
+    /** @type {any} */ a,
+    /** @type {{ exprify: string; data: any; size: number[]; }} */ b
+  ) => linearSolve(a, b),
+
   lup: (/** @type {any} */ matrix) => lupDecomposition(matrix),
-  
+
   lyap: (/** @type {any} */ a, /** @type {any} */ q) => solveLyapunov(a, q),
-  
+
   qr: (/** @type {any} */ matrix) => qrDecomposition(matrix),
 
-  
   transpose: (/** @type {any} */ matrix) => wrapDenseMatrix(transpose(unwrapDenseMatrix(matrix))),
 
-  
   inverse: (/** @type {any[]} */ matrix) => _inverse(matrix),
 
-  
   trace: (/** @type {any[]} */ matrix) => {
     const data = unwrapDenseMatrix(matrix);
     validateSquareMatrix(matrix);
-    return data.reduce((/** @type {any} */ sum, /** @type {{ [x: string]: any; }} */ row, /** @type {string | number} */ i) => sum + row[i], 0);
+    return data.reduce(
+      (
+        /** @type {any} */ sum,
+        /** @type {{ [x: string]: any; }} */ row,
+        /** @type {string | number} */ i
+      ) => sum + row[i],
+      0
+    );
   },
 
-  
   rank: (/** @type {any} */ matrix) => {
     const rrefData = unwrapDenseMatrix(_rref(matrix));
-    return rrefData.filter((/** @type {any[]} */ row) => row.some((v) => Math.abs(v) > 1e-10)).length;
+    return rrefData.filter((/** @type {any[]} */ row) => row.some((v) => Math.abs(v) > 1e-10))
+      .length;
   },
 
-  
   rref: (/** @type {any} */ matrix) => _rref(matrix),
 
-  
   minor: (/** @type {any[]} */ matrix, /** @type {any} */ i, /** @type {any} */ j) => {
     const data = unwrapDenseMatrix(matrix);
     validateSquareMatrix(matrix);
-    const sub = data.filter((/** @type {any} */ _, /** @type {any} */ ri) => ri !== i).map((/** @type {any[]} */ row) => row.filter((_, cj) => cj !== j));
+    const sub = data
+      .filter((/** @type {any} */ _, /** @type {any} */ ri) => ri !== i)
+      .map((/** @type {any[]} */ row) => row.filter((_, cj) => cj !== j));
     return determinant(sub);
   },
 
-  
   cofactor: (/** @type {any} */ matrix, /** @type {any} */ i, /** @type {any} */ j) => {
     const data = unwrapDenseMatrix(matrix);
-    const sub = data.filter((/** @type {any} */ _, /** @type {any} */ ri) => ri !== i).map((/** @type {any[]} */ row) => row.filter((/** @type {any} */ _, /** @type {any} */ cj) => cj !== j));
+    const sub = data
+      .filter((/** @type {any} */ _, /** @type {any} */ ri) => ri !== i)
+      .map((/** @type {any[]} */ row) =>
+        row.filter((/** @type {any} */ _, /** @type {any} */ cj) => cj !== j)
+      );
     return ((i + j) % 2 === 0 ? 1 : -1) * determinant(sub);
   },
 
-  
   cross: (/** @type {any} */ a, /** @type {any} */ b) => {
     const v1 = unwrapDenseMatrix(a);
     const v2 = unwrapDenseMatrix(b);
@@ -2692,63 +3130,69 @@ const internalFunctions = {
     return _cross(v1, v2);
   },
 
-  
   normalize: (/** @type {any} */ v) => {
     const data = unwrapDenseMatrix(v);
-    if (!Array.isArray(data)) {throw new Error('normalize() expects a vector');}
+    if (!Array.isArray(data)) {
+      throw new Error('normalize() expects a vector');
+    }
     const norm = vectorNorm(data);
-    if (norm === 0) {throw new Error('Cannot normalize zero vector');}
+    if (norm === 0) {
+      throw new Error('Cannot normalize zero vector');
+    }
     return scaleVector(data, 1 / norm);
   },
 
-  
   angle: (/** @type {any} */ a, /** @type {any} */ b) => {
     const v1 = unwrapDenseMatrix(a);
     const v2 = unwrapDenseMatrix(b);
-    if (!Array.isArray(v1) || !Array.isArray(v2)) {throw new Error('angle() expects vectors');}
+    if (!Array.isArray(v1) || !Array.isArray(v2)) {
+      throw new Error('angle() expects vectors');
+    }
     const dot = dotProduct(v1, v2);
     const norms = vectorNorm(v1) * vectorNorm(v2);
-    if (norms === 0) {throw new Error('Zero vector angle is undefined');}
+    if (norms === 0) {
+      throw new Error('Zero vector angle is undefined');
+    }
     return Math.acos(Math.max(-1, Math.min(1, dot / norms)));
   },
 
-  
   projection: (/** @type {any} */ a, /** @type {any} */ b) => {
     const v1 = unwrapDenseMatrix(a);
     const v2 = unwrapDenseMatrix(b);
-    if (!Array.isArray(v1) || !Array.isArray(v2)) {throw new Error('projection() expects vectors');}
+    if (!Array.isArray(v1) || !Array.isArray(v2)) {
+      throw new Error('projection() expects vectors');
+    }
     const dot = dotProduct(v1, v2);
     const normB = vectorNorm(v2);
-    if (normB === 0) {throw new Error('Zero vector projection undefined');}
+    if (normB === 0) {
+      throw new Error('Zero vector projection undefined');
+    }
     return dot / normB;
   },
 
-  
   identity: (/** @type {any} */ n) => wrapDenseMatrix(_identity(n)),
 
-  
   eye: (/** @type {any} */ n) => wrapDenseMatrix(_identity(n)),
 
-  
   zeros: (/** @type {any} */ n, /** @type {undefined} */ m) => {
-    if (m === undefined) {m = n;}
-    return wrapDenseMatrix(
-      Array.from({ length: n }, () => Array(m).fill(0))
-    );
+    if (m === undefined) {
+      m = n;
+    }
+    return wrapDenseMatrix(Array.from({ length: n }, () => Array(m).fill(0)));
   },
 
-  
   ones: (/** @type {any} */ n, /** @type {undefined} */ m) => {
-    if (m === undefined) {m = n;}
-    return wrapDenseMatrix(
-      Array.from({ length: n }, () => Array(m).fill(1))
-    );
+    if (m === undefined) {
+      m = n;
+    }
+    return wrapDenseMatrix(Array.from({ length: n }, () => Array(m).fill(1)));
   },
 
-  
   diag: (/** @type {any} */ x) => {
     const arr = unwrapDenseMatrix(x);
-    if (!Array.isArray(arr)) {throw new Error('diag() expects an array');}
+    if (!Array.isArray(arr)) {
+      throw new Error('diag() expects an array');
+    }
     return wrapDenseMatrix(
       Array.from({ length: arr.length }, (_, i) =>
         Array.from({ length: arr.length }, (_, j) => (i === j ? arr[i] : 0))
@@ -2756,23 +3200,19 @@ const internalFunctions = {
     );
   },
 
-  
   cholesky: (/** @type {any[]} */ matrix) => _cholesky(matrix),
 
-  
   eig: (/** @type {any[]} */ matrix) => _eig2x2(matrix),
 
-  
   svd: (/** @type {any} */ matrix) => _svd(matrix),
 
-  
   simplify: (/** @type {string} */ expression) => {
     if (typeof expression !== 'string') {
       throw new Error('simplify() expects an expression string');
     }
     return simplifyExpression(expression);
   },
-  
+
   derivative: (/** @type {string} */ expression, variable = 'x') => {
     if (typeof expression !== 'string' || typeof variable !== 'string') {
       throw new Error('derivative() expects expression and variable strings');
@@ -2780,21 +3220,32 @@ const internalFunctions = {
     return derivativeExpression(expression, variable);
   },
 
-  
   sin: (/** @type {number} */ x) => Math.sin(x),
-  
+
   cos: (/** @type {number} */ x) => Math.cos(x),
-  
+
   tan: (/** @type {number} */ x) => Math.tan(x),
 
-  
+  sind: (/** @type {number} */ x) => Math.sin((x * Math.PI) / 180),
+
+  cosd: (/** @type {number} */ x) => Math.cos((x * Math.PI) / 180),
+
+  tand: (/** @type {number} */ x) => Math.tan((x * Math.PI) / 180),
+
+  asind: (/** @type {number} */ x) => (Math.asin(x) * 180) / Math.PI,
+
+  acosd: (/** @type {number} */ x) => (Math.acos(x) * 180) / Math.PI,
+
+  atand: (/** @type {number} */ x) => (Math.atan(x) * 180) / Math.PI,
+
+  atand2: (/** @type {number} */ y, /** @type {number} */ x) => (Math.atan2(y, x) * 180) / Math.PI,
+
   asin: (/** @type {number} */ x) => Math.asin(x),
-  
+
   acos: (/** @type {number} */ x) => Math.acos(x),
-  
+
   atan: (/** @type {number} */ x) => Math.atan(x),
 
-  
   log: (/** @type {number} */ x) => {
     if (x <= 0) {
       throw new Error('log() domain error');
@@ -2802,7 +3253,6 @@ const internalFunctions = {
     return Math.log(x);
   },
 
-  
   log10: (/** @type {number} */ x) => {
     if (x <= 0) {
       throw new Error('log10() domain error');
@@ -2810,46 +3260,34 @@ const internalFunctions = {
     return Math.log10(x);
   },
 
-  
   exp: (/** @type {number} */ x) => Math.exp(x),
 
-  
   random: () => Math.random(),
 
-  
   and: (/** @type {any} */ a, /** @type {any} */ b) => Boolean(a && b),
 
-  
   or: (/** @type {any} */ a, /** @type {any} */ b) => Boolean(a || b),
 
-  
   not: (/** @type {any} */ a) => !a,
   '!': (/** @type {any} */ a) => !a,
 
-  
   eq: (/** @type {any} */ a, /** @type {any} */ b) => a === b,
 
-  
   neq: (/** @type {any} */ a, /** @type {any} */ b) => a !== b,
   notEqual: (/** @type {any} */ a, /** @type {any} */ b) => a !== b,
 
-  
   gt: (/** @type {number} */ a, /** @type {number} */ b) => a > b,
   greaterThan: (/** @type {number} */ a, /** @type {number} */ b) => a > b,
 
-  
   lt: (/** @type {number} */ a, /** @type {number} */ b) => a < b,
   lessThan: (/** @type {number} */ a, /** @type {number} */ b) => a < b,
 
-  
   gte: (/** @type {number} */ a, /** @type {number} */ b) => a >= b,
   greaterThanOrEqual: (/** @type {number} */ a, /** @type {number} */ b) => a >= b,
 
-  
   lte: (/** @type {number} */ a, /** @type {number} */ b) => a <= b,
   lessThanOrEqual: (/** @type {number} */ a, /** @type {number} */ b) => a <= b,
 
-  
   clamp: (/** @type {number} */ x, /** @type {number} */ min, /** @type {number} */ max) => {
     if (min > max) {
       throw new Error('clamp(): min > max');
@@ -2857,13 +3295,11 @@ const internalFunctions = {
     return Math.min(Math.max(x, min), max);
   },
 
-  
-  if: (/** @type {any} */ condition, /** @type {any} */ a, /** @type {any} */ b) => (condition ? a : b),
+  if: (/** @type {any} */ condition, /** @type {any} */ a, /** @type {any} */ b) =>
+    condition ? a : b,
 
-  
   typeof: (/** @type {any} */ x) => typeof x,
 
-  
   length: (/** @type {string | any[]} */ x) => {
     if (typeof x === 'string' || Array.isArray(x)) {
       return x.length;
@@ -2871,7 +3307,6 @@ const internalFunctions = {
     throw new Error('length() expects string or array');
   },
 
-  
   sum: (/** @type {any[]} */ ...args) => {
     if (!args.length) {
       throw new Error('sum() requires at least one argument');
@@ -2879,7 +3314,6 @@ const internalFunctions = {
     return args.reduce((a, b) => a + b, 0);
   },
 
-  
   prod: (/** @type {any[]} */ ...args) => {
     if (!args.length) {
       throw new Error('prod() requires at least one argument');
@@ -2887,7 +3321,6 @@ const internalFunctions = {
     return args.reduce((a, b) => a * b, 1);
   },
 
-  
   mean: (/** @type {any[]} */ ...args) => {
     if (!args.length) {
       throw new Error('mean() requires at least one argument');
@@ -2895,7 +3328,6 @@ const internalFunctions = {
     return args.reduce((a, b) => a + b, 0) / args.length;
   },
 
-  
   median: (/** @type {any[]} */ ...args) => {
     if (!args.length) {
       throw new Error('median() requires at least one argument');
@@ -2905,7 +3337,6 @@ const internalFunctions = {
     return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
   },
 
-  
   mode: (/** @type {any[]} */ ...args) => {
     if (!args.length) {
       throw new Error('mode() requires at least one argument');
@@ -2923,7 +3354,6 @@ const internalFunctions = {
     return result;
   },
 
-  
   std: (/** @type {any[]} */ ...args) => {
     if (args.length < 2) {
       throw new Error('std() requires at least two values');
@@ -2932,7 +3362,6 @@ const internalFunctions = {
     return Math.sqrt(args.reduce((sum, v) => sum + (v - m) ** 2, 0) / (args.length - 1));
   },
 
-  
   variance: (/** @type {any[]} */ ...args) => {
     if (args.length < 2) {
       throw new Error('variance() requires at least two values');
@@ -2941,7 +3370,6 @@ const internalFunctions = {
     return args.reduce((sum, v) => sum + (v - m) ** 2, 0) / (args.length - 1);
   },
 
-  
   range: (/** @type {any[]} */ ...args) => {
     if (!args.length) {
       throw new Error('range() requires at least one argument');
@@ -2949,10 +3377,8 @@ const internalFunctions = {
     return Math.max(...args) - Math.min(...args);
   },
 
-  
   gcd: (/** @type {number} */ a, /** @type {number} */ b) => _gcd(a, b),
 
-  
   lcm: (/** @type {number} */ a, /** @type {number} */ b) => {
     if (a === 0 || b === 0) {
       return 0;
@@ -2960,7 +3386,6 @@ const internalFunctions = {
     return Math.abs((a / _gcd(a, b)) * b);
   },
 
-  
   factorial: (/** @type {any} */ n) => {
     if (!Number.isInteger(n) || n < 0) {
       throw new Error('factorial() requires a non-negative integer');
@@ -2975,7 +3400,6 @@ const internalFunctions = {
     return r;
   },
 
-  
   isPrime: (/** @type {any} */ n) => {
     if (!Number.isInteger(n) || n < 2) {
       return false;
@@ -2994,7 +3418,6 @@ const internalFunctions = {
     return true;
   },
 
-  
   primeFactors: (/** @type {any} */ n) => {
     if (!Number.isInteger(n) || n < 2) {
       throw new Error('primeFactors() requires an integer >= 2');
@@ -3013,7 +3436,6 @@ const internalFunctions = {
     return factors;
   },
 
-  
   fibonacci: (/** @type {any} */ n) => {
     if (!Number.isInteger(n) || n < 0) {
       throw new Error('fibonacci() requires a non-negative integer');
@@ -3031,7 +3453,6 @@ const internalFunctions = {
     return b;
   },
 
-  
   nCr: (/** @type {any} */ n, /** @type {any} */ r) => {
     if (!Number.isInteger(n) || !Number.isInteger(r) || n < 0 || r < 0) {
       throw new Error('nCr() requires non-negative integers');
@@ -3050,7 +3471,6 @@ const internalFunctions = {
     return result;
   },
 
-  
   nPr: (/** @type {any} */ n, /** @type {any} */ r) => {
     if (!Number.isInteger(n) || !Number.isInteger(r) || n < 0 || r < 0) {
       throw new Error('nPr() requires non-negative integers');
@@ -3065,28 +3485,20 @@ const internalFunctions = {
     return result;
   },
 
-  
   gamma: (/** @type {any} */ n) => _gamma(n),
 
-  
   sinh: (/** @type {number} */ x) => Math.sinh(x),
 
-  
   cosh: (/** @type {number} */ x) => Math.cosh(x),
 
-  
   tanh: (/** @type {number} */ x) => Math.tanh(x),
 
-  
   asinh: (/** @type {number} */ x) => Math.asinh(x),
 
-  
   acosh: (/** @type {number} */ x) => Math.acosh(x),
 
-  
   atanh: (/** @type {number} */ x) => Math.atanh(x),
 
-  
   sec: (/** @type {number} */ x) => {
     const c = Math.cos(x);
     if (Math.abs(c) < 1e-15) {
@@ -3095,7 +3507,6 @@ const internalFunctions = {
     return 1 / c;
   },
 
-  
   csc: (/** @type {number} */ x) => {
     const s = Math.sin(x);
     if (Math.abs(s) < 1e-15) {
@@ -3104,7 +3515,6 @@ const internalFunctions = {
     return 1 / s;
   },
 
-  
   cot: (/** @type {number} */ x) => {
     const s = Math.sin(x);
     if (Math.abs(s) < 1e-15) {
@@ -3113,54 +3523,69 @@ const internalFunctions = {
     return Math.cos(x) / s;
   },
 
-  
   trunc: (/** @type {number} */ x) => Math.trunc(x),
 
-  
   sign: (/** @type {number} */ x) => Math.sign(x),
 
-  
   frac: (/** @type {number} */ x) => x - Math.trunc(x),
 
-  
-  split: (/** @type {string} */ str, /** @type {{ [Symbol.split](string: string, limit?: number): string[]; }} */ sep) => {
-    if (typeof str !== 'string') {throw new Error('split() expects a string');}
+  split: (
+    /** @type {string} */ str,
+    /** @type {{ [Symbol.split](string: string, limit?: number): string[]; }} */ sep
+  ) => {
+    if (typeof str !== 'string') {
+      throw new Error('split() expects a string');
+    }
     return str.split(sep);
   },
 
-  
   join: (/** @type {any[]} */ arr, /** @type {string | undefined} */ sep) => {
-    if (!Array.isArray(arr)) {throw new Error('join() expects an array');}
+    if (!Array.isArray(arr)) {
+      throw new Error('join() expects an array');
+    }
     return arr.join(sep);
   },
 
-  
   upper: (/** @type {string} */ str) => {
-    if (typeof str !== 'string') {throw new Error('upper() expects a string');}
+    if (typeof str !== 'string') {
+      throw new Error('upper() expects a string');
+    }
     return str.toUpperCase();
   },
 
-  
   lower: (/** @type {string} */ str) => {
-    if (typeof str !== 'string') {throw new Error('lower() expects a string');}
+    if (typeof str !== 'string') {
+      throw new Error('lower() expects a string');
+    }
     return str.toLowerCase();
   },
 
-  
   trim: (/** @type {string} */ str) => {
-    if (typeof str !== 'string') {throw new Error('trim() expects a string');}
+    if (typeof str !== 'string') {
+      throw new Error('trim() expects a string');
+    }
     return str.trim();
   },
 
-  
-  replace: (/** @type {string} */ str, /** @type {{ [Symbol.replace](string: string, replaceValue: string): string; }} */ pattern, /** @type {string} */ replacement) => {
-    if (typeof str !== 'string') {throw new Error('replace() expects a string');}
+  replace: (
+    /** @type {string} */ str,
+    /** @type {{ [Symbol.replace](string: string, replaceValue: string): string; }} */ pattern,
+    /** @type {string} */ replacement
+  ) => {
+    if (typeof str !== 'string') {
+      throw new Error('replace() expects a string');
+    }
     return str.replace(pattern, replacement);
   },
 
-  
-  substring: (/** @type {string} */ str, /** @type {number} */ start, /** @type {number | undefined} */ end) => {
-    if (typeof str !== 'string') {throw new Error('substring() expects a string');}
+  substring: (
+    /** @type {string} */ str,
+    /** @type {number} */ start,
+    /** @type {number | undefined} */ end
+  ) => {
+    if (typeof str !== 'string') {
+      throw new Error('substring() expects a string');
+    }
     return str.substring(start, end);
   },
 };
@@ -3171,6 +3596,27 @@ function buildAST(tokens) {
 
   const peek = () => tokens[current];
   const consume = () => tokens[current++];
+  const lastPos = () => {
+    const t = current > 0 ? tokens[current - 1] : null;
+    return t && t.pos !== undefined ? t.pos : -1;
+  };
+  const tokenPos = () => {
+    const t = peek();
+    return t && t.pos !== undefined ? t.pos : -1;
+  };
+
+  const nodeAt = (/** @type {any} */ node) => {
+    const pos = lastPos();
+    if (pos >= 0) { node.pos = pos; }
+    return node;
+  };
+
+  const syntaxError = (/** @type {string} */ msg) => {
+    const pos = tokenPos() >= 0 ? tokenPos() : lastPos();
+    const at = pos >= 0 ? ` at position ${pos}` : '';
+    throw new Error(`${msg}${at}`);
+  };
+
   const match = (/** @type {string} */ type, /** @type {string | undefined} */ value) => {
     const t = peek();
     if (!t) {
@@ -3189,7 +3635,6 @@ function buildAST(tokens) {
     return true;
   };
 
-  
   const parseSliceOrIndex = () => {
     let start = null;
 
@@ -3214,45 +3659,51 @@ function buildAST(tokens) {
     return start;
   };
 
-  
   function parsePrimary() {
     const token = consume();
     if (!token) {
-      throw new Error('Unexpected end of input');
+      syntaxError('Unexpected end of input');
     }
+
+    const withPos = (/** @type {any} */ node) => {
+      if (token.pos !== undefined) {
+        node.pos = token.pos;
+      }
+      return node;
+    };
 
     switch (token.type) {
       case 'Number':
       case 'BigInt':
       case 'Boolean':
       case 'String':
-        return { type: 'Literal', value: token.value };
+        return withPos({ type: 'Literal', value: token.value });
 
       case 'ImaginaryLiteral':
-        return { type: 'ImaginaryLiteral', value: token.value };
+        return withPos({ type: 'ImaginaryLiteral', value: token.value });
 
       case 'NumberWithUnit':
-        return {
+        return withPos({
           type: 'UnitLiteral',
           value: token.value,
           unit: token.unit,
-        };
+        });
 
       case 'Identifier':
-        return { type: 'Identifier', name: token.name };
+        return withPos({ type: 'Identifier', name: token.name });
 
       case 'Function':
-        return {
+        return withPos({
           type: 'Identifier',
           name: token.name,
-        };
+        });
 
       case 'Parenthesis':
         if (token.value === '(') {
           const expr = parseExpression();
 
           if (!match('Parenthesis', ')')) {
-            throw new Error(`Expected ')'`);
+            syntaxError("Expected ')'");
           }
 
           return expr;
@@ -3283,25 +3734,25 @@ function buildAST(tokens) {
               break;
             }
 
-            throw new Error(`Expected ',', ';', or ']' at ${current}`);
+            syntaxError("Expected ',', ';', or ']'");
           }
         }
 
         if (!rows.length) {
-          return { type: 'ArrayExpression', elements: [] };
+          return withPos({ type: 'ArrayExpression', elements: [] });
         }
 
         if (rows.length === 1) {
-          return { type: 'ArrayExpression', elements: rows[0] };
+          return withPos({ type: 'ArrayExpression', elements: rows[0] });
         }
 
-        return {
+        return withPos({
           type: 'ArrayExpression',
           elements: rows.map((elements) => ({
             type: 'ArrayExpression',
             elements,
           })),
-        };
+        });
       }
 
       case 'BlockStart': {
@@ -3312,11 +3763,11 @@ function buildAST(tokens) {
             const keyToken = consume();
 
             if (keyToken.type !== 'Identifier' && keyToken.type !== 'String') {
-              throw new Error('Invalid object key');
+              syntaxError('Invalid object key');
             }
 
             if (!match('Colon', undefined)) {
-              throw new Error("Expected ':' after key");
+              syntaxError("Expected ':' after key");
             }
 
             const value = parseExpression();
@@ -3328,18 +3779,17 @@ function buildAST(tokens) {
           } while (match('Comma', undefined));
 
           if (!match('BlockEnd', undefined)) {
-            throw new Error(`Expected '}' at ${current}`);
+            syntaxError("Expected '}'");
           }
         }
 
-        return { type: 'ObjectExpression', properties };
+        return withPos({ type: 'ObjectExpression', properties });
       }
     }
 
-    throw new Error(`Unexpected token: ${JSON.stringify(token)}`);
+    syntaxError(`Unexpected token: ${JSON.stringify(token.value || token.name || token.type)}`);
   }
 
-  
   function parseMember() {
     let object = parsePrimary();
 
@@ -3353,15 +3803,15 @@ function buildAST(tokens) {
           } while (match('Comma', undefined));
 
           if (!match('ArrayEnd', undefined)) {
-            throw new Error(`Expected ']' at ${current}`);
+            syntaxError("Expected ']'");
           }
         }
 
-        object = {
+        object = nodeAt({
           type: 'IndexExpression',
           object,
           selectors,
-        };
+        });
         continue;
       }
 
@@ -3369,27 +3819,27 @@ function buildAST(tokens) {
         const property = consume();
 
         if (property.type !== 'Identifier') {
-          throw new Error("Expected property after '.'");
+          syntaxError("Expected property after '.'");
         }
 
-        object = {
+        object = nodeAt({
           type: 'MemberExpression',
           object,
           property: { type: 'Identifier', name: property.value },
           optional: false,
-        };
+        });
         continue;
       }
 
       if (match('Operator', '?.')) {
         const property = consume();
 
-        object = {
+        object = nodeAt({
           type: 'MemberExpression',
           object,
           property: { type: 'Identifier', name: property.value },
           optional: true,
-        };
+        });
         continue;
       }
 
@@ -3399,7 +3849,6 @@ function buildAST(tokens) {
     return object;
   }
 
-  
   function parseCallChain() {
     let expr = parseMember();
 
@@ -3420,52 +3869,49 @@ function buildAST(tokens) {
       }
 
       if (!match('Parenthesis', ')')) {
-        throw new Error(`Expected ')' at ${current}`);
+        syntaxError("Expected ')'");
       }
 
-      expr = {
+      expr = nodeAt({
         type: 'CallExpression',
         callee: expr,
         arguments: args,
-      };
+      });
     }
 
     return expr;
   }
 
-  
   function parseUnary() {
     if (match('UnaryOperator', undefined)) {
       const operator = tokens[current - 1].value;
 
-      return {
+      return nodeAt({
         type: 'UnaryExpression',
         operator,
         argument: parseUnary(),
-      };
+      });
     }
 
     return parseCallChain();
   }
 
-  
   function parsePower() {
     const left = parseUnary();
 
     if (match('Operator', '^')) {
       const right = parsePower();
-      return {
+      return nodeAt({
         type: 'BinaryExpression',
         operator: '^',
         left,
         right,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parseMultiplication() {
     let left = parsePower();
 
@@ -3473,18 +3919,17 @@ function buildAST(tokens) {
       const operator = tokens[current - 1].value;
       const right = parsePower();
 
-      left = {
+      left = nodeAt({
         type: 'BinaryExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parseAddition() {
     let left = parseMultiplication();
 
@@ -3492,18 +3937,17 @@ function buildAST(tokens) {
       const operator = tokens[current - 1].value;
       const right = parseMultiplication();
 
-      left = {
+      left = nodeAt({
         type: 'BinaryExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parseUnitConversion() {
     const left = parseAddition();
 
@@ -3513,20 +3957,19 @@ function buildAST(tokens) {
       const next = consume();
 
       if (!next || next.type !== 'Unit') {
-        throw new Error(`Expected unit after '${nextKeyword.value}'`);
+        syntaxError(`Expected unit after '${nextKeyword.value}'`);
       }
 
-      return {
+      return nodeAt({
         type: 'UnitConversion',
         from: left,
         to: next.value,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parseComparison() {
     let left = parseUnitConversion();
 
@@ -3540,18 +3983,17 @@ function buildAST(tokens) {
       const operator = tokens[current - 1].value;
       const right = parseUnitConversion();
 
-      left = {
+      left = nodeAt({
         type: 'BinaryExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parseLogical() {
     let left = parseComparison();
 
@@ -3559,36 +4001,34 @@ function buildAST(tokens) {
       const operator = tokens[current - 1].value;
       const right = parseComparison();
 
-      left = {
+      left = nodeAt({
         type: 'LogicalExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parseNullish() {
     let left = parseLogical();
 
     while (match('Operator', '??')) {
       const right = parseLogical();
 
-      left = {
+      left = nodeAt({
         type: 'LogicalExpression',
         operator: '??',
         left,
         right,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parseTernary() {
     const test = parseNullish();
 
@@ -3596,33 +4036,32 @@ function buildAST(tokens) {
       const consequent = parseExpression();
 
       if (!match('Ternary', ':')) {
-        throw new Error("Expected ':' in ternary");
+        syntaxError("Expected ':' in ternary");
       }
 
       const alternate = parseExpression();
 
-      return {
+      return nodeAt({
         type: 'ConditionalExpression',
         test,
         consequent,
         alternate,
-      };
+      });
     }
 
     if (match('Colon', undefined)) {
       const end = parseNullish();
 
-      return {
+      return nodeAt({
         type: 'RangeExpression',
         start: test,
         end,
-      };
+      });
     }
 
     return test;
   }
 
-  
   function parseLambda() {
     const left = parsePipeline();
 
@@ -3632,43 +4071,43 @@ function buildAST(tokens) {
         params = [left.name];
       } else if (left.type === 'ArrayExpression') {
         params = left.elements.map((/** @type {{ type: string; name: any; }} */ el) => {
-          if (el.type !== 'Identifier') {throw new Error('Lambda parameter must be an identifier');}
+          if (el.type !== 'Identifier') {
+            syntaxError('Lambda parameter must be an identifier');
+          }
           return el.name;
         });
       } else {
-        throw new Error('Invalid lambda parameter');
+        syntaxError('Invalid lambda parameter');
       }
 
       const body = parseLambda();
 
-      return {
+      return nodeAt({
         type: 'ArrowFunctionExpression',
         params,
         body,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parsePipeline() {
     let left = parseTernary();
 
     while (match('Operator', '|>')) {
       const right = parseTernary();
 
-      left = {
+      left = nodeAt({
         type: 'PipelineExpression',
         left,
         right,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parseAssignment() {
     const left = parseLambda();
 
@@ -3688,12 +4127,12 @@ function buildAST(tokens) {
           left.arguments.every((/** @type {{ type: string; }} */ arg) => arg.type === 'Identifier');
 
         if (!isFunctionTarget) {
-          throw new Error('Invalid function definition');
+          syntaxError('Invalid function definition');
         }
 
         const right = parseAssignment();
 
-        return {
+        return nodeAt({
           type: 'FunctionAssignmentExpression',
           operator,
           left: {
@@ -3702,7 +4141,7 @@ function buildAST(tokens) {
           },
           params: left.arguments.map((/** @type {{ name: any; }} */ arg) => arg.name),
           right,
-        };
+        });
       }
 
       if (
@@ -3710,23 +4149,22 @@ function buildAST(tokens) {
         left.type !== 'MemberExpression' &&
         left.type !== 'IndexExpression'
       ) {
-        throw new Error('Invalid assignment target');
+        syntaxError('Invalid assignment target');
       }
 
       const right = parseAssignment();
 
-      return {
+      return nodeAt({
         type: 'AssignmentExpression',
         operator,
         left,
         right,
-      };
+      });
     }
 
     return left;
   }
 
-  
   function parseExpression() {
     return parseAssignment();
   }
@@ -3734,25 +4172,24 @@ function buildAST(tokens) {
   const ast = parseExpression();
 
   if (current < tokens.length) {
-    throw new Error(`Unexpected token at end: ${JSON.stringify(peek())}`);
+    const t = peek();
+    const pos = t && t.pos !== undefined ? ` at position ${t.pos}` : '';
+    throw new Error(`Unexpected token "${t ? JSON.stringify(t.value || t.name || t.type) : '?'}"${pos}`);
   }
 
   return ast;
 }
 
-const isComplex = ( /** @type {any} */ value) =>
+const isComplex = (/** @type {any} */ value) =>
   value && typeof value === 'object' && 're' in value && 'im' in value;
-
 
 const isUnitValue = (/** @type {any} */ value) =>
   value && typeof value === 'object' && 'value' in value && 'unit' in value;
 
-
-const isMatrix = ( /** @type {any[]} */ value) =>
+const isMatrix = (/** @type {any[]} */ value) =>
   Array.isArray(value) && value.length > 0 && value.every(Array.isArray);
 
-
-const formatComplex = ( /** @type {{ re: any; im: number; }} */ value) => {
+const formatComplex = (/** @type {{ re: any; im: number; }} */ value) => {
   if (!isComplex(value)) {
     return value;
   }
@@ -3775,8 +4212,10 @@ const formatComplex = ( /** @type {{ re: any; im: number; }} */ value) => {
   return `${real} ${sign} ${imagPart}`;
 };
 
-
-const formatScalar = ( /** @type {unknown} */ value) => {
+const formatScalar = (/** @type {unknown} */ value) => {
+  if (isBigNumber(value)) {
+    return formatBigNumber(value);
+  }
   if (typeof value !== 'number') {
     return String(value);
   }
@@ -3788,8 +4227,15 @@ const formatScalar = ( /** @type {unknown} */ value) => {
   return Number(value.toFixed(14)).toString();
 };
 
+const formatResult = (/** @type {any} */ value) => {
+  if (isFraction(value)) {
+    return formatFraction(value);
+  }
 
-const formatResult = ( /** @type {any} */ value) => {
+  if (isBigNumber(value)) {
+    return formatBigNumber(value);
+  }
+
   if (isComplex(value)) {
     return formatComplex(value);
   }
@@ -3817,10 +4263,8 @@ const formatResult = ( /** @type {any} */ value) => {
   return value;
 };
 
-
 class exprify {
   constructor() {
-
     this.math = mathOperations;
     this.units = createUnitsStore(globalUnits);
     this.functions = createFunctionRegistry(internalFunctions);
@@ -3832,14 +4276,14 @@ class exprify {
     this.variables.set('TAU', 2 * Math.PI);
     this.variables.set('INFINITY', Infinity);
     this.variables.set('NaN', NaN);
-    this.addFunction('parse', ( /** @type {any} */ expression) => {
+    this.addFunction('parse', (/** @type {any} */ expression) => {
       if (typeof expression !== 'string') {
         throw new Error('parse() expects an expression string');
       }
       return expression;
     });
-    this.addFunction('leafCount', ( /** @type {string} */ value) => {
-      const countLeafTokens = ( /** @type {string} */ expression) => {
+    this.addFunction('leafCount', (/** @type {string} */ value) => {
+      const countLeafTokens = (/** @type {string} */ expression) => {
         const strippedKeys = expression.replace(/(^|[{,]\s*)[a-zA-Z_][a-zA-Z0-9_]*\s*:/g, '$1');
         const matches = strippedKeys.match(/\d+(\.\d+)?(e[+-]?\d+)?n?|[a-zA-Z_][a-zA-Z0-9_]*/gi);
         return matches ? matches.length : 0;
@@ -3880,7 +4324,7 @@ class exprify {
     });
     this.addFunction('matrix', (/** @type {any} */ value) => wrapDenseMatrix(value));
     this.addFunction('sparse', (/** @type {any} */ value) => wrapDenseMatrix(value));
-    
+
     // --- rationalize(): polynomial/rational arithmetic using Map<JSON-power-tuple, coefficient> ---
     this.addFunction('rationalize', (/** @type {string} */ expression, withDetails = false) => {
       if (typeof expression !== 'string') {
@@ -3892,17 +4336,17 @@ class exprify {
         .replace(/(\d)([a-zA-Z(])/g, '$1*$2')
         .replace(/([a-zA-Z)])(\d)/g, '$1*$2');
 
-      const polyKey = ( powers) =>
+      const polyKey = (powers) =>
         JSON.stringify(Object.entries(powers).sort(([a], [b]) => a.localeCompare(b)));
-      const keyToPowers = ( /** @type {string} */ key) => Object.fromEntries(JSON.parse(key));
-      const constPoly = ( /** @type {number} */ value) => new Map([[polyKey({}), value]]);
-      const varPoly = ( /** @type {any} */ name) => new Map([[polyKey({ [name]: 1 }), 1]]);
-      const cleanPoly = ( /** @type {any[] | Map<any, any>} */ poly) =>
+      const keyToPowers = (/** @type {string} */ key) => Object.fromEntries(JSON.parse(key));
+      const constPoly = (/** @type {number} */ value) => new Map([[polyKey({}), value]]);
+      const varPoly = (/** @type {any} */ name) => new Map([[polyKey({ [name]: 1 }), 1]]);
+      const cleanPoly = (/** @type {any[] | Map<any, any>} */ poly) =>
         new Map([...poly.entries()].filter(([, coeff]) => coeff !== 0));
       const addPoly = (
-         /** @type {Iterable<readonly [any, any]> | null | undefined} */ a,
-         /** @type {any[] | Map<any, any>} */ b,
-         sign = 1
+        /** @type {Iterable<readonly [any, any]> | null | undefined} */ a,
+        /** @type {any[] | Map<any, any>} */ b,
+        sign = 1
       ) => {
         const result = new Map(a);
         for (const [key, coeff] of b.entries()) {
@@ -3910,10 +4354,7 @@ class exprify {
         }
         return cleanPoly(result);
       };
-      const multiplyPoly = (
-         /** @type {any} */ a,
-         /** @type {any} */ b
-      ) => {
+      const multiplyPoly = (/** @type {any} */ a, /** @type {any} */ b) => {
         const result = new Map();
         for (const [keyA, coeffA] of a.entries()) {
           const powersA = keyToPowers(keyA);
@@ -3929,38 +4370,35 @@ class exprify {
         }
         return cleanPoly(result);
       };
-      const powPoly = ( /** @type {any} */ poly,  /** @type {number} */ exponent) => {
+      const powPoly = (/** @type {any} */ poly, /** @type {number} */ exponent) => {
         let result = constPoly(1);
         for (let index = 0; index < exponent; index++) {
           result = multiplyPoly(result, poly);
         }
         return result;
       };
-      const rational = (
-         /** @type {Map<any, any>} */ num,
-         den = constPoly(1)
-      ) => ({ num, den });
+      const rational = (/** @type {Map<any, any>} */ num, den = constPoly(1)) => ({ num, den });
       const addRat = (
-         /** @type {{ num: any; den: any; }} */ a,
-         /** @type {{ den: any; num: any; }} */ b,
-         sign = 1
+        /** @type {{ num: any; den: any; }} */ a,
+        /** @type {{ den: any; num: any; }} */ b,
+        sign = 1
       ) =>
         rational(
           addPoly(multiplyPoly(a.num, b.den), multiplyPoly(b.num, a.den), sign),
           multiplyPoly(a.den, b.den)
         );
       const mulRat = (
-         /** @type {{ num: any; den: any; }} */ a,
-         /** @type {{ num: any; den: any; }} */ b
+        /** @type {{ num: any; den: any; }} */ a,
+        /** @type {{ num: any; den: any; }} */ b
       ) => rational(multiplyPoly(a.num, b.num), multiplyPoly(a.den, b.den));
       const divRat = (
-         /** @type {{ num: any; den: any; }} */ a,
-         /** @type {{ den: any; num: any; }} */ b
+        /** @type {{ num: any; den: any; }} */ a,
+        /** @type {{ den: any; num: any; }} */ b
       ) => rational(multiplyPoly(a.num, b.den), multiplyPoly(a.den, b.num));
       const negRat = (
-         /** @type {{ num: any[] | Map<any, any>; den: Map<string, number> | undefined; }} */ value
+        /** @type {{ num: any[] | Map<any, any>; den: Map<string, number> | undefined; }} */ value
       ) => rational(addPoly(new Map(), value.num, -1), value.den);
-      const astToRat = ( /** @type {any} */ node) => {
+      const astToRat = (/** @type {any} */ node) => {
         switch (node.type) {
           case 'Literal':
             return rational(constPoly(node.value));
@@ -4004,7 +4442,7 @@ class exprify {
             throw new Error('Unsupported expression in rationalize()');
         }
       };
-      const formatPoly = ( /** @type {any} */ poly) => {
+      const formatPoly = (/** @type {any} */ poly) => {
         const entries = [...poly.entries()]
           .filter(([, coeff]) => coeff !== 0)
           .sort(([keyA], [keyB]) => {
@@ -4078,92 +4516,147 @@ class exprify {
     });
 
     this.addFunction('map', (/** @type {any[]} */ arr, /** @type {any} */ fnOrName) => {
-      if (!Array.isArray(arr)) {throw new Error('map() expects an array');}
+      if (!Array.isArray(arr)) {
+        throw new Error('map() expects an array');
+      }
       const fn = typeof fnOrName === 'string' ? this.functions.get(fnOrName) : fnOrName;
-      if (typeof fn !== 'function') {throw new Error('map() requires a function or function name');}
+      if (typeof fn !== 'function') {
+        throw new Error('map() requires a function or function name');
+      }
       return arr.map((x) => fn(x));
     });
 
     this.addFunction('filter', (/** @type {any[]} */ arr, /** @type {any} */ fnOrName) => {
-      if (!Array.isArray(arr)) {throw new Error('filter() expects an array');}
+      if (!Array.isArray(arr)) {
+        throw new Error('filter() expects an array');
+      }
       const fn = typeof fnOrName === 'string' ? this.functions.get(fnOrName) : fnOrName;
-      if (typeof fn !== 'function') {throw new Error('filter() requires a function or function name');}
+      if (typeof fn !== 'function') {
+        throw new Error('filter() requires a function or function name');
+      }
       return arr.filter((x) => fn(x));
     });
 
     // Numeric integration via Simpson's 1/3 rule with 100 subintervals
-    this.addFunction('integral', (/** @type {any} */ expr, /** @type {number} */ a, /** @type {number} */ b) => {
-      if (typeof expr !== 'string') {throw new Error('integral() expects an expression string');}
-      const compiled = this.compile(expr);
-      const n = 100;
-      const h = (b - a) / n;
-      let sum = compiled({ x: a }) + compiled({ x: b });
-      for (let i = 1; i < n; i++) {
-        const x = a + i * h;
-        const f = compiled({ x });
-        sum += i % 2 === 0 ? 2 * f : 4 * f;
+    this.addFunction(
+      'integral',
+      (/** @type {any} */ expr, /** @type {number} */ a, /** @type {number} */ b) => {
+        if (typeof expr !== 'string') {
+          throw new Error('integral() expects an expression string');
+        }
+        const compiled = this.compile(expr);
+        const n = 100;
+        const h = (b - a) / n;
+        let sum = compiled({ x: a }) + compiled({ x: b });
+        for (let i = 1; i < n; i++) {
+          const x = a + i * h;
+          const f = compiled({ x });
+          sum += i % 2 === 0 ? 2 * f : 4 * f;
+        }
+        return (h / 3) * sum;
       }
-      return (h / 3) * sum;
-    });
+    );
 
     // Summation: evaluate expr for variable = start..end
-    this.addFunction('sigma', (/** @type {any} */ variable, /** @type {any} */ start, /** @type {number} */ end, /** @type {any} */ expr) => {
-      if (typeof expr !== 'string') {throw new Error('sigma() expects an expression string');}
-      const compiled = this.compile(expr);
-      let total = 0;
-      for (let i = start; i <= end; i++) {
-        total += compiled({ [variable]: i });
+    this.addFunction(
+      'sigma',
+      (
+        /** @type {any} */ variable,
+        /** @type {any} */ start,
+        /** @type {number} */ end,
+        /** @type {any} */ expr
+      ) => {
+        if (typeof expr !== 'string') {
+          throw new Error('sigma() expects an expression string');
+        }
+        const compiled = this.compile(expr);
+        let total = 0;
+        for (let i = start; i <= end; i++) {
+          total += compiled({ [variable]: i });
+        }
+        return total;
       }
-      return total;
-    });
+    );
 
     // Product: multiply expr for variable = start..end
-    this.addFunction('pi', (/** @type {any} */ variable, /** @type {any} */ start, /** @type {number} */ end, /** @type {any} */ expr) => {
-      if (typeof expr !== 'string') {throw new Error('pi() expects an expression string');}
-      const compiled = this.compile(expr);
-      let total = 1;
-      for (let i = start; i <= end; i++) {
-        total *= compiled({ [variable]: i });
+    this.addFunction(
+      'pi',
+      (
+        /** @type {any} */ variable,
+        /** @type {any} */ start,
+        /** @type {number} */ end,
+        /** @type {any} */ expr
+      ) => {
+        if (typeof expr !== 'string') {
+          throw new Error('pi() expects an expression string');
+        }
+        const compiled = this.compile(expr);
+        let total = 1;
+        for (let i = start; i <= end; i++) {
+          total *= compiled({ [variable]: i });
+        }
+        return total;
       }
-      return total;
-    });
+    );
 
-    this.addFunction('substitute', (/** @type {any} */ expr, /** @type {any} */ variable, /** @type {any} */ value) => {
-      if (typeof expr !== 'string') {throw new Error('substitute() expects an expression string');}
-      const compiled = this.compile(expr);
-      return compiled({ [variable]: value });
-    });
+    this.addFunction(
+      'substitute',
+      (/** @type {any} */ expr, /** @type {any} */ variable, /** @type {any} */ value) => {
+        if (typeof expr !== 'string') {
+          throw new Error('substitute() expects an expression string');
+        }
+        const compiled = this.compile(expr);
+        return compiled({ [variable]: value });
+      }
+    );
 
     // Numeric limit: evaluate at progressively smaller epsilon until convergence
-    this.addFunction('limit', (/** @type {any} */ expr, /** @type {any} */ variable, /** @type {number} */ approach, /** @type {string} */ direction) => {
-      if (typeof expr !== 'string') {throw new Error('limit() expects an expression string');}
-      const compiled = this.compile(expr);
-      const epsilons = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10];
-      let lastVal = NaN;
-      for (const eps of epsilons) {
-        let x;
-        if (direction === 'right') {
-          x = approach + eps;
-        } else if (direction === 'left') {
-          x = approach - eps;
-        } else {
-          x = approach + eps;
+    this.addFunction(
+      'limit',
+      (
+        /** @type {any} */ expr,
+        /** @type {any} */ variable,
+        /** @type {number} */ approach,
+        /** @type {string} */ direction
+      ) => {
+        if (typeof expr !== 'string') {
+          throw new Error('limit() expects an expression string');
         }
-        const val = compiled({ [variable]: x });
-        if (isFinite(val)) {lastVal = val;}
+        const compiled = this.compile(expr);
+        const epsilons = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10];
+        let lastVal = NaN;
+        for (const eps of epsilons) {
+          let x;
+          if (direction === 'right') {
+            x = approach + eps;
+          } else if (direction === 'left') {
+            x = approach - eps;
+          } else {
+            x = approach + eps;
+          }
+          const val = compiled({ [variable]: x });
+          if (isFinite(val)) {
+            lastVal = val;
+          }
+        }
+        return lastVal;
       }
-      return lastVal;
-    });
+    );
 
     // --- expand(): detect polynomial degree via forward differences, solve Vandermonde system for coefficients ---
     this.addFunction('expand', (/** @type {string} */ expr) => {
-      if (typeof expr !== 'string') {throw new Error('expand() expects an expression string');}
+      if (typeof expr !== 'string') {
+        throw new Error('expand() expects an expression string');
+      }
       const variableMatch = expr.match(/[a-zA-Z_][a-zA-Z0-9_]*/);
-      if (!variableMatch) {throw new Error('expand() could not identify variable');}
+      if (!variableMatch) {
+        throw new Error('expand() could not identify variable');
+      }
       const v = variableMatch[0];
       const cleaned = expr.replace(/\s+/g, '').replace(/"/g, '\\"');
       const addStar = (/** @type {string} */ s) => s.replace(/(\d)([a-zA-Z_])/g, '$1*$2');
-      const evalAt = (/** @type {number} */ x) => this.evaluate(`substitute("${addStar(cleaned)}", "${v}", ${x})`);
+      const evalAt = (/** @type {number} */ x) =>
+        this.evaluate(`substitute("${addStar(cleaned)}", "${v}", ${x})`);
 
       const maxDegree = 10;
       const vals = [];
@@ -4174,11 +4667,17 @@ class exprify {
       let degree = 0;
       let diffs = [...vals];
       for (let d = 0; d <= maxDegree; d++) {
-        if (Math.abs(diffs[0]) > 1e-10) {degree = d;}
+        if (Math.abs(diffs[0]) > 1e-10) {
+          degree = d;
+        }
         const next = [];
-        for (let i = 0; i < diffs.length - 1; i++) {next.push(diffs[i + 1] - diffs[i]);}
+        for (let i = 0; i < diffs.length - 1; i++) {
+          next.push(diffs[i + 1] - diffs[i]);
+        }
         diffs = next;
-        if (diffs.every((x) => Math.abs(x) < 1e-10)) {break;}
+        if (diffs.every((x) => Math.abs(x) < 1e-10)) {
+          break;
+        }
       }
 
       const n = degree + 1;
@@ -4189,24 +4688,34 @@ class exprify {
       });
       for (let col = 0; col < n; col++) {
         let pivot = col;
-        while (pivot < n && Math.abs(m[pivot][col]) < 1e-12) {pivot++;}
-        if (pivot === n) {continue;}
+        while (pivot < n && Math.abs(m[pivot][col]) < 1e-12) {
+          pivot++;
+        }
+        if (pivot === n) {
+          continue;
+        }
         [m[col], m[pivot]] = [m[pivot], m[col]];
         const pv = m[col][col];
-        for (let j = col; j <= n; j++) {m[col][j] /= pv;}
+        for (let j = col; j <= n; j++) {
+          m[col][j] /= pv;
+        }
         for (let row = 0; row < n; row++) {
           if (row !== col) {
             const f = m[row][col];
-            for (let j = col; j <= n; j++) {m[row][j] -= f * m[col][j];}
+            for (let j = col; j <= n; j++) {
+              m[row][j] -= f * m[col][j];
+            }
           }
         }
       }
-      const coeffs = m.map((row) => Math.abs(row[n]) < 1e-10 ? 0 : row[n]);
+      const coeffs = m.map((row) => (Math.abs(row[n]) < 1e-10 ? 0 : row[n]));
       const terms = [];
       for (let i = degree; i >= 0; i--) {
         const c = coeffs[i];
-        if (Math.abs(c) < 1e-10) {continue;}
-        const sign = terms.length === 0 ? (c < 0 ? '-' : '') : (c < 0 ? ' - ' : ' + ');
+        if (Math.abs(c) < 1e-10) {
+          continue;
+        }
+        const sign = terms.length === 0 ? (c < 0 ? '-' : '') : c < 0 ? ' - ' : ' + ';
         const absC = Math.abs(c);
         const cStr = i === 0 ? `${absC}` : absC === 1 ? '' : `${absC}`;
         const pStr = i === 0 ? '' : i === 1 ? v : `${v}^${i}`;
@@ -4217,12 +4726,17 @@ class exprify {
 
     // --- factor(): detect degree, solve coefficients, apply rational root theorem + synthetic division ---
     this.addFunction('factor', (/** @type {string} */ poly) => {
-      if (typeof poly !== 'string') {throw new Error('factor() expects an expression string');}
+      if (typeof poly !== 'string') {
+        throw new Error('factor() expects an expression string');
+      }
       const cleaned = poly.replace(/\s+/g, '');
       const variableMatch = cleaned.match(/[a-zA-Z_][a-zA-Z0-9_]*/);
-      if (!variableMatch) {throw new Error('factor() could not identify variable');}
+      if (!variableMatch) {
+        throw new Error('factor() could not identify variable');
+      }
       const variable = variableMatch[0];
-      const addStar = (/** @type {string} */ s) => s.replace(/"/g, '\\"').replace(/(\d)([a-zA-Z_])/g, '$1*$2');
+      const addStar = (/** @type {string} */ s) =>
+        s.replace(/"/g, '\\"').replace(/(\d)([a-zA-Z_])/g, '$1*$2');
       const cleanedExpr = addStar(cleaned);
       const maxPower = 6;
       const vals = [];
@@ -4232,14 +4746,21 @@ class exprify {
       let diff = vals.slice();
       let degree = 0;
       for (let d = 0; d <= maxPower; d++) {
-        if (diff.every((x) => Math.abs(x) < 1e-10)) { degree = Math.max(0, d - 1); break; }
+        if (diff.every((x) => Math.abs(x) < 1e-10)) {
+          degree = Math.max(0, d - 1);
+          break;
+        }
         if (d < maxPower) {
           const next = [];
-          for (let i = 0; i < diff.length - 1; i++) {next.push(diff[i + 1] - diff[i]);}
+          for (let i = 0; i < diff.length - 1; i++) {
+            next.push(diff[i + 1] - diff[i]);
+          }
           diff = next;
         }
       }
-      if (degree === 0) {return `(${poly})`;}
+      if (degree === 0) {
+        return `(${poly})`;
+      }
       const n = degree + 1;
       const m = Array.from({ length: n }, (_, i) => {
         const row = Array.from({ length: n }, (_, j) => i ** j);
@@ -4248,29 +4769,44 @@ class exprify {
       });
       for (let col = 0; col < n; col++) {
         let pivot = col;
-        while (pivot < n && Math.abs(m[pivot][col]) < 1e-12) {pivot++;}
-        if (pivot === n) {continue;}
+        while (pivot < n && Math.abs(m[pivot][col]) < 1e-12) {
+          pivot++;
+        }
+        if (pivot === n) {
+          continue;
+        }
         [m[col], m[pivot]] = [m[pivot], m[col]];
         const pv = m[col][col];
-        for (let j = col; j <= n; j++) {m[col][j] /= pv;}
+        for (let j = col; j <= n; j++) {
+          m[col][j] /= pv;
+        }
         for (let row = 0; row < n; row++) {
           if (row !== col) {
             const f = m[row][col];
-            for (let j = col; j <= n; j++) {m[row][j] -= f * m[col][j];}
+            for (let j = col; j <= n; j++) {
+              m[row][j] -= f * m[col][j];
+            }
           }
         }
       }
-      const coeffs = m.map((r) => Math.abs(r[n]) < 1e-10 ? 0 : r[n]);
+      const coeffs = m.map((r) => (Math.abs(r[n]) < 1e-10 ? 0 : r[n]));
       if (degree >= 1 && degree <= 3) {
         const polyRootFn = this.functions.get('polynomialRoot');
         const rootArr = polyRootFn(...coeffs);
         const rootArrFlat = Array.isArray(rootArr) ? rootArr : [rootArr];
-        const unique = [...new Set(rootArrFlat.map((r) => (Number.isInteger(r) ? r : Math.round(r * 1e10) / 1e10)))].sort((a, b) => a - b);
+        const unique = [
+          ...new Set(
+            rootArrFlat.map((r) => (Number.isInteger(r) ? r : Math.round(r * 1e10) / 1e10))
+          ),
+        ].sort((a, b) => a - b);
         if (unique.length === degree) {
           const lead = coeffs[degree];
-          const leadStr = Math.abs(lead - 1) > 1e-10 ? (Math.abs(lead + 1) < 1e-10 ? '-' : `${lead}`) : '';
+          const leadStr =
+            Math.abs(lead - 1) > 1e-10 ? (Math.abs(lead + 1) < 1e-10 ? '-' : `${lead}`) : '';
           const factors = unique.map((r) => {
-            if (Math.abs(r) < 1e-10) {return variable;}
+            if (Math.abs(r) < 1e-10) {
+              return variable;
+            }
             return r > 0 ? `(${variable} - ${r})` : `(${variable} + ${Math.abs(r)})`;
           });
           return `${leadStr}${factors.join('')}`;
@@ -4281,16 +4817,21 @@ class exprify {
 
     // --- solve(): split on '=', form f(x)=0, detect polynomial degree, find roots ---
     this.addFunction('solve', (/** @type {string} */ eqn, /** @type {string} */ variable) => {
-      if (typeof eqn !== 'string') {throw new Error('solve() expects an equation string');}
+      if (typeof eqn !== 'string') {
+        throw new Error('solve() expects an equation string');
+      }
       const parts = eqn.split('=');
-      if (parts.length !== 2) {throw new Error('solve() expects an equation with =');}
+      if (parts.length !== 2) {
+        throw new Error('solve() expects an equation with =');
+      }
       const lhs = parts[0].trim();
       const rhs = parts[1].trim();
       const expr = `(${lhs}) - (${rhs})`;
       const cleaned = expr.replace(/\s+/g, '');
       const variableMatch = cleaned.match(/[a-zA-Z_][a-zA-Z0-9_]*/);
       const v = variable || (variableMatch ? variableMatch[0] : 'x');
-      const addStar = (/** @type {string} */ s) => s.replace(/"/g, '\\"').replace(/(\d)([a-zA-Z_])/g, '$1*$2');
+      const addStar = (/** @type {string} */ s) =>
+        s.replace(/"/g, '\\"').replace(/(\d)([a-zA-Z_])/g, '$1*$2');
       const cleanedExpr = addStar(cleaned);
       const maxPower = 6;
       const vals = [];
@@ -4300,14 +4841,21 @@ class exprify {
       let diff = vals.slice();
       let degree = 0;
       for (let d = 0; d <= maxPower; d++) {
-        if (diff.every((x) => Math.abs(x) < 1e-10)) { degree = Math.max(0, d - 1); break; }
+        if (diff.every((x) => Math.abs(x) < 1e-10)) {
+          degree = Math.max(0, d - 1);
+          break;
+        }
         if (d < maxPower) {
           const next = [];
-          for (let i = 0; i < diff.length - 1; i++) {next.push(diff[i + 1] - diff[i]);}
+          for (let i = 0; i < diff.length - 1; i++) {
+            next.push(diff[i + 1] - diff[i]);
+          }
           diff = next;
         }
       }
-      if (degree === 0) {throw new Error('No solution found');}
+      if (degree === 0) {
+        throw new Error('No solution found');
+      }
       const n = degree + 1;
       const m = Array.from({ length: n }, (_, i) => {
         const row = Array.from({ length: n }, (_, j) => i ** j);
@@ -4316,19 +4864,27 @@ class exprify {
       });
       for (let col = 0; col < n; col++) {
         let pivot = col;
-        while (pivot < n && Math.abs(m[pivot][col]) < 1e-12) {pivot++;}
-        if (pivot === n) {continue;}
+        while (pivot < n && Math.abs(m[pivot][col]) < 1e-12) {
+          pivot++;
+        }
+        if (pivot === n) {
+          continue;
+        }
         [m[col], m[pivot]] = [m[pivot], m[col]];
         const pv = m[col][col];
-        for (let j = col; j <= n; j++) {m[col][j] /= pv;}
+        for (let j = col; j <= n; j++) {
+          m[col][j] /= pv;
+        }
         for (let row = 0; row < n; row++) {
           if (row !== col) {
             const f = m[row][col];
-            for (let j = col; j <= n; j++) {m[row][j] -= f * m[col][j];}
+            for (let j = col; j <= n; j++) {
+              m[row][j] -= f * m[col][j];
+            }
           }
         }
       }
-      const coeffs = m.map((r) => Math.abs(r[n]) < 1e-10 ? 0 : r[n]);
+      const coeffs = m.map((r) => (Math.abs(r[n]) < 1e-10 ? 0 : r[n]));
       if (degree >= 1 && degree <= 3) {
         const polyRootFn = this.functions.get('polynomialRoot');
         const rootArr = polyRootFn(...coeffs);
@@ -4339,7 +4895,6 @@ class exprify {
     });
   }
 
-  
   /**
    * @param {any} name
    * @param {any} value
@@ -4348,7 +4903,6 @@ class exprify {
     this.variables.set(name, value);
   }
 
-  
   /**
    * @param {any} name
    */
@@ -4356,7 +4910,6 @@ class exprify {
     return this.variables.get(name);
   }
 
-  
   /**
    * @param {string} name
    * @param {any} fn
@@ -4365,7 +4918,6 @@ class exprify {
     this.functions.register(name, fn);
   }
 
-  
   _createContext() {
     return createContext({
       functions: this.functions,
@@ -4375,7 +4927,6 @@ class exprify {
     });
   }
 
-  
   /**
    * @param {any} expr
    */
@@ -4386,7 +4937,6 @@ class exprify {
     return tokenize(expr, this._createContext());
   }
 
-  
   /**
    * @param {string} expr
    */
@@ -4396,16 +4946,17 @@ class exprify {
     return { tokens, ast };
   }
 
-  
   /**
    * @param {string} expr
+   * @param {object} [scope]
    */
-  evaluate(expr) {
+  evaluate(expr, scope = {}) {
     const { ast } = this.parse(expr);
-    return formatResult(evaluateAST(ast, this._createContext()));
+    const ctx = this._createContext();
+    const mergedCtx = Object.keys(scope).length > 0 ? ctx.withScope(scope) : ctx;
+    return formatResult(evaluateAST(ast, mergedCtx));
   }
 
-  
   /**
    * @param {string} expr
    */
@@ -4426,9 +4977,31 @@ class exprify {
     return compiledFn;
   }
 
-  
   clearCache() {
     this._cache.clear();
+  }
+
+  exportState() {
+    return {
+      variables: this.variables.all(),
+      functions: this.functions.getAllFunctionsName(),
+      units: this.units.getUnits(),
+    };
+  }
+
+  importState(state) {
+    if (state.variables) {
+      this.variables.merge(state.variables);
+    }
+    if (state.units) {
+      this.units.setUnits(state.units);
+    }
+    if (state.functions) {
+      for (const name of state.functions) {
+        if (!this.functions.has(name)) ;
+      }
+    }
+    return this;
   }
 }
 

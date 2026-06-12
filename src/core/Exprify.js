@@ -9,6 +9,8 @@ import { createFunctionRegistry } from '../function/registry.js';
 import { internalFunctions } from '../function/internal.js';
 import { isDenseMatrixWrapper, serializeExprifyValue, wrapDenseMatrix } from '../utils/matrix.js';
 import { buildAST } from '../parser/astBuild.js';
+import { isFraction, formatFraction } from '../math/fraction.js';
+import { isBigNumber, formatBigNumber } from '../math/bignumber.js';
 
 const isComplex = (/** @type {any} */ value) =>
   value && typeof value === 'object' && 're' in value && 'im' in value;
@@ -43,6 +45,9 @@ const formatComplex = (/** @type {{ re: any; im: number; }} */ value) => {
 };
 
 const formatScalar = (/** @type {unknown} */ value) => {
+  if (isBigNumber(value)) {
+    return formatBigNumber(value);
+  }
   if (typeof value !== 'number') {
     return String(value);
   }
@@ -55,6 +60,14 @@ const formatScalar = (/** @type {unknown} */ value) => {
 };
 
 const formatResult = (/** @type {any} */ value) => {
+  if (isFraction(value)) {
+    return formatFraction(value);
+  }
+
+  if (isBigNumber(value)) {
+    return formatBigNumber(value);
+  }
+
   if (isComplex(value)) {
     return formatComplex(value);
   }
@@ -767,10 +780,13 @@ class exprify {
 
   /**
    * @param {string} expr
+   * @param {object} [scope]
    */
-  evaluate(expr) {
+  evaluate(expr, scope = {}) {
     const { ast } = this.parse(expr);
-    return formatResult(evaluateAST(ast, this._createContext()));
+    const ctx = this._createContext();
+    const mergedCtx = Object.keys(scope).length > 0 ? ctx.withScope(scope) : ctx;
+    return formatResult(evaluateAST(ast, mergedCtx));
   }
 
   /**
@@ -795,6 +811,31 @@ class exprify {
 
   clearCache() {
     this._cache.clear();
+  }
+
+  exportState() {
+    return {
+      variables: this.variables.all(),
+      functions: this.functions.getAllFunctionsName(),
+      units: this.units.getUnits(),
+    };
+  }
+
+  importState(state) {
+    if (state.variables) {
+      this.variables.merge(state.variables);
+    }
+    if (state.units) {
+      this.units.setUnits(state.units);
+    }
+    if (state.functions) {
+      for (const name of state.functions) {
+        if (!this.functions.has(name)) {
+          // warn: function could not be restored (built-in only)
+        }
+      }
+    }
+    return this;
   }
 }
 

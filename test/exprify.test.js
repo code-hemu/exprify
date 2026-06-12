@@ -763,4 +763,212 @@ describe('Exprify Engine - Extended Tests', () => {
       expect(result).toBe('[4]');
     });
   });
+
+  describe('Scope-based Evaluation', () => {
+    test('evaluate with scope overrides variables', () => {
+      expr.setVariable('x', 100);
+      expect(expr.evaluate('x + 1', { x: 5 })).toBe(6);
+    });
+
+    test('evaluate with scope does not mutate instance vars', () => {
+      expr.setVariable('x', 10);
+      expr.evaluate('x + 1', { x: 99 });
+      expect(expr.getVariable('x')).toBe(10);
+    });
+
+    test('evaluate with partial scope keeps existing vars', () => {
+      expr.setVariable('y', 5);
+      expect(expr.evaluate('x + y', { x: 3 })).toBe(8);
+    });
+
+    test('compile with scope', () => {
+      const fn = expr.compile('a * b');
+      expect(fn({ a: 6, b: 7 })).toBe(42);
+    });
+
+    test('compile with empty scope', () => {
+      expr.setVariable('x', 5);
+      const fn = expr.compile('x + 1');
+      expect(fn()).toBe(6);
+    });
+  });
+
+  describe('Degree Trig Functions', () => {
+    test('sind 90', () => {
+      expect(expr.evaluate('sind(90)')).toBe(1);
+    });
+
+    test('cosd 0', () => {
+      expect(expr.evaluate('cosd(0)')).toBe(1);
+    });
+
+    test('tand 45', () => {
+      expect(expr.evaluate('tand(45)')).toBeCloseTo(1, 10);
+    });
+
+    test('asind 1', () => {
+      expect(expr.evaluate('asind(1)')).toBe(90);
+    });
+
+    test('acosd 0', () => {
+      expect(expr.evaluate('acosd(0)')).toBe(90);
+    });
+
+    test('atand 1', () => {
+      expect(expr.evaluate('atand(1)')).toBeCloseTo(45, 10);
+    });
+
+    test('atand2', () => {
+      expect(expr.evaluate('atand2(1, 1)')).toBeCloseTo(45, 10);
+      expect(expr.evaluate('atand2(0, -1)')).toBeCloseTo(180, 10);
+    });
+  });
+
+  describe('State Serialization', () => {
+    test('exportState returns variables and units', () => {
+      expr.setVariable('a', 42);
+      expr.setVariable('b', 'hello');
+      const state = expr.exportState();
+      expect(state.variables.a).toBe(42);
+      expect(state.variables.b).toBe('hello');
+      expect(state.units).toBeDefined();
+      expect(Array.isArray(state.functions)).toBe(true);
+    });
+
+    test('importState restores variables', () => {
+      const state = {
+        variables: { x: 10, y: 20 },
+        units: expr.exportState().units,
+        functions: [],
+      };
+      expr.importState(state);
+      expect(expr.getVariable('x')).toBe(10);
+      expect(expr.getVariable('y')).toBe(20);
+    });
+
+    test('export + import round-trip', () => {
+      expr.setVariable('val', 99);
+      const state = expr.exportState();
+      const expr2 = new Exprify();
+      expr2.importState(state);
+      expect(expr2.evaluate('val')).toBe(99);
+    });
+  });
+
+  describe('Descriptive Error Messages', () => {
+    test('tokenizer error includes index', () => {
+      try {
+        expr.evaluate('2 + @ + 3');
+      } catch (e) {
+        expect(e.message).toMatch(/index|position/i);
+      }
+    });
+
+    test('parser error on mismatch', () => {
+      expect(() => expr.evaluate('(2 + 3')).toThrow();
+    });
+  });
+
+  describe('Fractions', () => {
+    test('create fraction', () => {
+      const result = expr.evaluate('fraction(1, 3)');
+      expect(result).toBe('1/3');
+    });
+
+    test('fraction addition', () => {
+      expect(expr.evaluate('fraction(1, 3) + fraction(1, 6)')).toBe('1/2');
+    });
+
+    test('fraction subtraction', () => {
+      expect(expr.evaluate('fraction(3, 4) - fraction(1, 4)')).toBe('1/2');
+    });
+
+    test('fraction multiplication', () => {
+      expect(expr.evaluate('fraction(2, 3) * fraction(3, 4)')).toBe('1/2');
+    });
+
+    test('fraction division', () => {
+      expect(expr.evaluate('fraction(1, 2) / fraction(3, 4)')).toBe('2/3');
+    });
+
+    test('fraction auto-reduces', () => {
+      expect(expr.evaluate('fraction(10, 4)')).toBe('5/2');
+    });
+
+    test('numer extracts numerator', () => {
+      expect(expr.evaluate('numer(fraction(3, 4))')).toBe(3);
+    });
+
+    test('denom extracts denominator', () => {
+      expect(expr.evaluate('denom(fraction(3, 4))')).toBe(4);
+    });
+
+    test('isFraction detects fractions', () => {
+      expect(expr.evaluate('isFraction(fraction(1, 2))')).toBe(true);
+    });
+
+    test('isFraction false for numbers', () => {
+      expect(expr.evaluate('isFraction(42)')).toBe(false);
+    });
+  });
+
+  describe('BigNumber / Arbitrary Precision', () => {
+    test('bignumber creation', () => {
+      const result = expr.evaluate('bignumber("0.1")');
+      expect(result).toBe('0.1');
+    });
+
+    test('bignumber avoids floating point error', () => {
+      const result = expr.evaluate('bignumber("0.1") + bignumber("0.2")');
+      expect(result).toBe('0.3');
+    });
+
+    test('bignumber addition', () => {
+      expect(expr.evaluate('bignumber("1.23") + bignumber("4.56")')).toBe('5.79');
+    });
+
+    test('bignumber subtraction', () => {
+      expect(expr.evaluate('bignumber("5.5") - bignumber("2.3")')).toBe('3.2');
+    });
+
+    test('bignumber multiplication', () => {
+      expect(expr.evaluate('bignumber("2.5") * bignumber("3")')).toBe('7.5');
+    });
+
+    test('bignumber division', () => {
+      const result = expr.evaluate('bignumber("1") / bignumber("3")');
+      expect(result).toBe('3.3333333333333333333e-1');
+    });
+
+    test('bignumber comparison', () => {
+      expect(expr.evaluate('bignumber("5") > bignumber("3")')).toBe(true);
+      expect(expr.evaluate('bignumber("2") == bignumber("2")')).toBe(true);
+      expect(expr.evaluate('bignumber("1") < bignumber("0")')).toBe(false);
+    });
+
+    test('bignumber negation', () => {
+      expect(expr.evaluate('-bignumber("42")')).toBe('-42');
+    });
+
+    test('isBigNumber type check', () => {
+      expect(expr.evaluate('isBigNumber(bignumber("5"))')).toBe(true);
+      expect(expr.evaluate('isBigNumber(42)')).toBe(false);
+    });
+
+    test('bignumber scientific notation positive exponent', () => {
+      expect(expr.evaluate('bignumber("1.2e500")')).toBe('1.2e+500');
+    });
+
+    test('bignumber scientific notation negative exponent', () => {
+      expect(expr.evaluate('bignumber("1.2e-500")')).toBe('1.2e-500');
+    });
+
+    test('bignumber scientific notation 1e5', () => {
+      expect(expr.evaluate('bignumber("1e5")')).toBe('100000');
+    });
+
+    test('bignumber arithmetic with scientific notation', () => {
+      expect(expr.evaluate('bignumber("1e20") + bignumber("1e20")')).toBe('2e+20');
+    });
+  });
 });

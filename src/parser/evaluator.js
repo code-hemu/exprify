@@ -1,4 +1,6 @@
 import { unwrapDenseMatrix, wrapDenseMatrix, isDenseMatrixWrapper } from '../utils/matrix.js';
+import { isFraction, fraction as createFrac, addFrac, subFrac, mulFrac, divFrac, powFrac } from '../math/fraction.js';
+import { isBigNumber, bigNumber as createBN } from '../math/bignumber.js';
 
 /** @param {any } node*/
 export function evaluateAST(node, context = {}) {
@@ -24,6 +26,11 @@ export function evaluateAST(node, context = {}) {
       return [value];
     }
     throw new Error('Expected matrix-compatible value');
+  };
+
+  const nodeError = (/** @type {string} */ msg) => {
+    const pos = node && node.pos !== undefined ? ` at position ${node.pos}` : '';
+    return new Error(`${msg}${pos}`);
   };
 
   const toOneBasedIndex = (/** @type {unknown} */ value) => {
@@ -379,35 +386,35 @@ export function evaluateAST(node, context = {}) {
           case '%':
             value = current % right;
             break;
-          default:
-            throw new Error(`Unknown compound operator ${node.operator}`);
-        }
-      } else {
-        value = evaluateAST(node.right, context);
-      }
-
-      if (node.left.type === 'Identifier') {
-        vars.set(node.left.name, value);
-        if (node.right.type === 'ArrayExpression') {
-          return wrapDenseMatrix(unwrapDenseMatrix(value));
-        }
-        return value;
-      }
-
-      if (node.left.type === 'IndexExpression' && node.left.object.type === 'Identifier') {
-        const currentValue = vars.get(node.left.object.name);
-        const assigned = assignMatrixIndex(currentValue, node.left.selectors, value);
-        vars.set(node.left.object.name, assigned.updatedMatrix);
-        return assigned.selectionResult;
-      }
-
-      throw new Error('Invalid assignment target');
+      default:
+        throw nodeError(`Unknown compound operator ${node.operator}`);
     }
+  } else {
+    value = evaluateAST(node.right, context);
+  }
+
+  if (node.left.type === 'Identifier') {
+    vars.set(node.left.name, value);
+    if (node.right.type === 'ArrayExpression') {
+      return wrapDenseMatrix(unwrapDenseMatrix(value));
+    }
+    return value;
+  }
+
+  if (node.left.type === 'IndexExpression' && node.left.object.type === 'Identifier') {
+    const currentValue = vars.get(node.left.object.name);
+    const assigned = assignMatrixIndex(currentValue, node.left.selectors, value);
+    vars.set(node.left.object.name, assigned.updatedMatrix);
+    return assigned.selectionResult;
+  }
+
+  throw nodeError('Invalid assignment target');
+}
 
     // User-defined function via f(a,b)=expr: closure evaluates body in a new scope with params bound
     case 'FunctionAssignmentExpression': {
       if (node.operator !== '=') {
-        throw new Error(`Operator ${node.operator} is not supported for function definitions`);
+        throw nodeError(`Operator ${node.operator} is not supported for function definitions`);
       }
 
       const fn = (/** @type {any} */ ...args) => {
@@ -425,12 +432,14 @@ export function evaluateAST(node, context = {}) {
 
       switch (node.operator) {
         case '-':
-          return isComplex(val) ? simplifyComplex({ re: -val.re, im: -val.im }) : -val;
+          if (isBigNumber(val)) {return val.negated();}
+          if (isComplex(val)) {return simplifyComplex({ re: -val.re, im: -val.im });}
+          return -val;
         case '!':
           return !val;
       }
 
-      throw new Error(`Unknown unary operator ${node.operator}`);
+      throw nodeError(`Unknown unary operator ${node.operator}`);
     }
 
     // Dispatch order: unit arithmetic -> matrix arithmetic -> complex arithmetic -> scalar arithmetic
@@ -462,7 +471,43 @@ export function evaluateAST(node, context = {}) {
           case '^':
             return powerMatrix(left, right);
           default:
-            throw new Error(`Operator ${node.operator} not supported for matrices`);
+            throw nodeError(`Operator ${node.operator} not supported for matrices`);
+        }
+      }
+
+      if (isFraction(left) || isFraction(right)) {
+        const a = isFraction(left) ? left : createFrac(left, 1);
+        const b = isFraction(right) ? right : createFrac(right, 1);
+        switch (node.operator) {
+          case '+': return addFrac(a, b);
+          case '-': return subFrac(a, b);
+          case '*': return mulFrac(a, b);
+          case '/': return divFrac(a, b);
+          case '^': {
+            const p = powFrac(a, right);
+            if (p) {return p;}
+            throw nodeError('Fraction power requires non-negative integer exponent');
+          }
+          default: throw nodeError(`Operator ${node.operator} not supported for fractions`);
+        }
+      }
+
+      if (isBigNumber(left) || isBigNumber(right)) {
+        const a = isBigNumber(left) ? left : createBN(left);
+        const b = isBigNumber(right) ? right : createBN(right);
+        switch (node.operator) {
+          case '+': return a.plus(b);
+          case '-': return a.minus(b);
+          case '*': return a.times(b);
+          case '/': return a.div(b);
+          case '%': return a.mod(b);
+          case '^': return a.pow(b);
+          case '>': return a.gt(b);
+          case '<': return a.lt(b);
+          case '>=': return a.gte(b);
+          case '<=': return a.lte(b);
+          case '==': return a.eq(b);
+          default: throw nodeError(`Operator ${node.operator} not supported for BigNumber`);
         }
       }
 
@@ -496,7 +541,7 @@ export function evaluateAST(node, context = {}) {
           return left === right;
       }
 
-      throw new Error(`Unknown operator ${node.operator}`);
+      throw nodeError(`Unknown operator ${node.operator}`);
     }
 
     // Short-circuit: && returns first falsy, || returns first truthy, ?? returns first non-nullish
@@ -515,7 +560,7 @@ export function evaluateAST(node, context = {}) {
         return left ?? evaluateAST(node.right, context);
       }
 
-      throw new Error(`Unknown logical operator ${node.operator}`);
+      throw nodeError(`Unknown logical operator ${node.operator}`);
     }
 
     // Range [start..end] inclusive: returns array of integers from floor(start) to floor(end)
@@ -523,7 +568,7 @@ export function evaluateAST(node, context = {}) {
       const start = evaluateAST(node.start, context);
       const end = evaluateAST(node.end, context);
       if (typeof start !== 'number' || typeof end !== 'number') {
-        throw new Error('Range requires numeric bounds');
+        throw nodeError('Range requires numeric bounds');
       }
       const result = [];
       for (let i = Math.floor(start); i <= Math.floor(end); i++) {
@@ -590,7 +635,7 @@ export function evaluateAST(node, context = {}) {
         return fn(leftVal);
       }
 
-      throw new Error('Invalid pipeline target');
+      throw nodeError('Invalid pipeline target');
     }
 
     // Unit conversion: value fromUnit -> toUnit
@@ -598,11 +643,11 @@ export function evaluateAST(node, context = {}) {
       const from = evaluateAST(node.from, context);
 
       if (!isUnitObj(from)) {
-        throw new Error('Left side must be a unit value');
+        throw nodeError('Left side must be a unit value');
       }
 
       if (!units) {
-        throw new Error('Unit system not available');
+        throw nodeError('Unit system not available');
       }
 
       return units.convert(from.value, from.unit, node.to);
@@ -639,6 +684,6 @@ export function evaluateAST(node, context = {}) {
     }
 
     default:
-      throw new Error(`Unknown AST node type: ${node.type}`);
+      throw nodeError(`Unknown AST node type: ${node.type}`);
   }
 }
