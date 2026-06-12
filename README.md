@@ -4,6 +4,20 @@
 
 Exprify is a JavaScript expression parser and evaluator for math-heavy apps. It supports arithmetic, variables, custom functions, unit conversion, matrices, complex numbers, symbolic helpers, and a growing set of linear algebra utilities.
 
+[![Version](https://img.shields.io/npm/v/exprify)](https://www.npmjs.com/package/exprify)
+[![Downloads](https://img.shields.io/npm/dt/exprify)](https://www.npmjs.com/package/exprify)
+[![License](https://img.shields.io/github/license/code-hemu/exprify)](https://github.com/code-hemu/exprify/blob/master/LICENSE)
+[![](https://data.jsdelivr.com/v1/package/npm/exprify/badge?style=rounded)](https://www.jsdelivr.com/package/npm/exprify)
+[![unpkg](https://img.shields.io/badge/CDN-unpkg-blue)](https://unpkg.com/exprify)
+[![esm.sh](https://img.shields.io/badge/CDN-esm.sh-black)](https://esm.sh/exprify)
+[![GitHub Issues](https://img.shields.io/github/issues/code-hemu/exprify)](https://github.com/code-hemu/exprify/issues)
+[![Last Commit](https://img.shields.io/github/last-commit/code-hemu/exprify)](https://github.com/code-hemu/exprify/commits/master)
+[![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/code-hemu/exprify)
+[![Contributors](https://img.shields.io/github/contributors/code-hemu/exprify)](https://github.com/code-hemu/exprify/graphs/contributors)
+[![Top Language](https://img.shields.io/github/languages/top/code-hemu/exprify)](https://github.com/code-hemu/exprify)
+[![Github Sponsor](https://img.shields.io/github/sponsors/code-hemu)](https://github.com/sponsors/code-hemu)
+
+
 ## Installation
 
 ```bash
