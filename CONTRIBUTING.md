@@ -2,7 +2,7 @@
 
 First off, thanks for taking the time to contribute!
 
-Contributions are welcome — whether it's reporting a bug, discussing improvements, or submitting a pull request.
+Contributions are welcome. It's reporting a bug, discussing improvements, or submitting a pull request.
 
 ---
 
