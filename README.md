@@ -544,8 +544,8 @@ expr.evaluate('leafCount(parse("{a: 22/7, b: 10^(1/2)}"))');
 | `clamp` | Clamp value to range | `clamp(15, 0, 10)` | `10` |
 | `sin` | Sine (radians) | `sin(pi/2)` | `1` |
 | `cos` | Cosine (radians) | `cos(pi)` | `-1` |
-| `lsolve` | Solve linear system | `lsolve([-2,3;2,1], [11,9])` | matrix JSON |
 | `rationalize` | Rationalize expression | `rationalize("1/x + 1/(x+1)")` | `(2x + 1)/(x^2 + x)` |
+| `bignumber` | Create arbitrary-precision number | `bignumber("0.1")` | `"0.1"` |
 
 > **Full reference**: See the [searchable function table](https://code-hemu.github.io/exprify/functions.html) for all ~130 built-in functions.
 
