@@ -7,7 +7,7 @@ describe('Exprify Engine - Extended Tests', () => {
     expr = new Exprify();
   });
 
-  /* ================= BASIC ================= */
+  // BASIC
   test('addition', () => {
     expect(expr.evaluate('2 + 3 + 5')).toBe(10);
   });
@@ -24,7 +24,7 @@ describe('Exprify Engine - Extended Tests', () => {
     expect(expr.evaluate('(1 + 2) * (3 + 4)')).toBe(21);
   });
 
-  /* ================= NESTED ================= */
+  // NESTED
   test('nested parentheses', () => {
     expect(expr.evaluate('((2 + 3) * (4 + 1))')).toBe(25);
   });
@@ -33,7 +33,7 @@ describe('Exprify Engine - Extended Tests', () => {
     expect(expr.evaluate('(((1 + 1) + 1) + 1)')).toBe(4);
   });
 
-  /* ================= UNARY ================= */
+  // UNARY
   test('unary minus', () => {
     expect(expr.evaluate('-5 + 10')).toBe(5);
   });
@@ -42,7 +42,7 @@ describe('Exprify Engine - Extended Tests', () => {
     expect(expr.evaluate('--5')).toBe(5);
   });
 
-  /* ================= POWER ================= */
+  // POWER
   test('power operator', () => {
     expect(expr.evaluate('2 ^ 3')).toBe(8);
   });
@@ -51,7 +51,7 @@ describe('Exprify Engine - Extended Tests', () => {
     expect(expr.evaluate('2 + 2 ^ 3')).toBe(10);
   });
 
-  /* ================= LOGICAL ================= */
+  // LOGICAL
   test('logical AND', () => {
     expect(expr.evaluate('true && false')).toBe(false);
   });
@@ -60,7 +60,7 @@ describe('Exprify Engine - Extended Tests', () => {
     expect(expr.evaluate('true || false')).toBe(true);
   });
 
-  /* ================= FUNCTION ================= */
+  // FUNCTION
   test('function call', () => {
     expect(expr.evaluate('max(2, 5, 3)')).toBe(5);
   });
@@ -81,17 +81,17 @@ describe('Exprify Engine - Extended Tests', () => {
     expect(expr.evaluate(`leafCount(parse("{a: 22/7, b: 10^(1/2)}"))`)).toBe(5);
   });
 
-  /* ================= STRING ================= */
+  // STRING
   test('string concat', () => {
     expect(expr.evaluate('"Hello " + "World"')).toBe('Hello World');
   });
 
-  /* ================= BIGINT ================= */
+  // BIGINT
   test('bigint power', () => {
     expect(expr.evaluate('11n ^ 2n')).toBe(121n);
   });
 
-  /* ================= UNIT ================= */
+  // UNIT
   test('unit conversion', () => {
     expect(expr.evaluate('2 inch to cm')).toBe('5.08 cm');
   });
@@ -100,7 +100,7 @@ describe('Exprify Engine - Extended Tests', () => {
     expect(expr.evaluate('5 cm + 2 inch')).toBe('10.08 cm');
   });
 
-  /* ================= EDGE CASE ================= */
+  // EDGE CASE
   test('division', () => {
     expect(expr.evaluate('10 / 2')).toBe(5);
   });
@@ -221,7 +221,7 @@ describe('Exprify Engine - Extended Tests', () => {
     expect(expr.evaluate('mulScale(5)')).toBe(10);
   });
 
-  /* ================= MATH EXTENSIONS ================= */
+  // MATH EXTENSIONS
 
   describe('Statistics', () => {
     test('sum', () => {
