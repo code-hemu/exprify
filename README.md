@@ -539,6 +539,62 @@ npm run build
 
 Build output is written to `dist/`.
 
+## CLI
+
+Exprify ships with a command-line interface for evaluating expressions directly from the terminal.
+
+### Usage
+
+```bash
+exprify "2 + 2"
+# 4
+
+exprify "sqrt(16)" "5 * 3"
+# 4
+# 15
+```
+
+### Options
+
+| Flag | Description |
+|---|---|
+| `--help` / `-h` | Show usage info |
+| `--version` / `-v` | Print version number |
+| `--parse <expr>` | Show token/AST JSON structure |
+| `--tokens <expr>` | Show token array |
+
+### Pipe
+
+```bash
+echo "2 inch to cm" | exprify
+# "5.08 cm"
+```
+
+### REPL
+
+Run without arguments to start an interactive REPL with tab completion:
+
+```bash
+exprify
+```
+
+```
+Exprify v1.0.5 — interactive REPL
+Type an expression or .help for commands
+
+» 2 + 2
+4
+» .help
+
+  Commands:
+  .exit       Exit the REPL
+  .help       Show this message
+  <expr>      Evaluate an expression
+  Ctrl+C      Cancel / exit
+```
+
+Type `.exit` or Ctrl+C to quit.
+
 ## Testing
 
 ```bash
