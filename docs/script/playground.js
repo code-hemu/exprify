@@ -1,4 +1,4 @@
-import Exprify from '../dist/exprify.esm.js';
+import Exprify from '../../dist/exprify.esm.js';
 
 const expr = new Exprify();
 const output = document.getElementById('output');

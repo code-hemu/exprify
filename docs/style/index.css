@@ -11,7 +11,7 @@ body {
 }
 
 nav {
-  background: #1a1a2e;
+  background: #666666;
   color: #fff;
   padding: 16px 40px;
   display: flex;
@@ -20,7 +20,7 @@ nav {
 }
 
 nav a {
-  color: #a0c4ff;
+  color: #ffffff;
   text-decoration: none;
 }
 
@@ -75,7 +75,7 @@ code {
 }
 
 pre {
-  background: #1a1a2e;
+  background: #666666;
   color: #e0e0e0;
   padding: 16px;
   border-radius: 6px;
