@@ -25,6 +25,11 @@ Exprify is a JavaScript expression parser and evaluator. It is made for math app
 - Complex numbers
 - Symbolic math utilities
 - Calculus and statistics tools
+- Arbitrary-precision arithmetic (BigNumber)
+- Exact fractions
+- Degree-mode trig functions
+- Expression chaining (fluent API)
+- State serialization / deserialization
 
 
 ## Installation
@@ -71,6 +76,8 @@ console.log(expr.evaluate("5 + 7 * 2"));
 ```
 
 `unpkg` resolves to the browser bundle from `dist/exprify.min.js`.
+
+**Explore online**: Try the [interactive playground](docs/playground.html) or browse the [API docs](docs/index.html) and [function reference](docs/functions.html).
 
 ## Module Formats
 
@@ -147,6 +154,40 @@ expr.addFunction("double", (n) => n * 2);
 
 console.log(expr.evaluate("double(5) + 3"));
 // 13
+```
+
+### `expr.evaluate(expression, scope?)`
+
+Accepts an optional scope object to override variables for a single evaluation.
+
+```js
+expr.setVariable("x", 100);
+expr.evaluate("x + 1", { x: 5 });
+// 6 — scope overrides x for this call only
+```
+
+### `expr.exportState()` / `expr.importState(state)`
+
+Serializes and restores the full engine state (variables, functions, units).
+
+```js
+const state = expr.exportState();
+// state → { variables: {...}, functions: [...], units: {...} }
+
+const expr2 = new Exprify();
+expr2.importState(state);
+```
+
+### `expr.chain()`
+
+Returns a fluent Chain object for sequential evaluations. Each step stores its result as `ans` for the next expression.
+
+```js
+const c = expr.chain();
+c.evaluate("2 + 2");           // ans = 4
+c.evaluate("ans * 10");        // ans = 40
+c.evaluate("ans / 2");         // ans = 20
+c.done();                      // 20
 ```
 
 ### Inline Function Definitions
@@ -263,6 +304,81 @@ expr.evaluate("max(...[1, 5, 3])");
 
 expr.evaluate("max(10, ...[1, 5, 3], 7)");
 // 10
+```
+
+### Fractions
+
+Exact rational arithmetic using `fraction(n, d)`. Fractions auto-simplify and interoperate with arithmetic operators.
+
+```js
+expr.evaluate("fraction(1, 3) + fraction(1, 6)");
+// "1/2"
+
+expr.evaluate("fraction(2, 3) * fraction(3, 4)");
+// "1/2"
+
+expr.evaluate("numer(fraction(3, 4))");
+// 3
+
+expr.evaluate("denom(fraction(3, 4))");
+// 4
+```
+
+### Arbitrary Precision (BigNumber)
+
+Avoid floating-point rounding errors with `bignumber()`. Supports scientific notation for very large or very small numbers.
+
+```js
+expr.evaluate('bignumber("0.1") + bignumber("0.2")');
+// "0.3"
+
+expr.evaluate('bignumber("1.2e500")');
+// "1.2e+500"
+
+expr.evaluate('bignumber("1e20") + bignumber("1e20")');
+// "2e+20"
+```
+
+### Degree Trig Functions
+
+Trig functions that accept degrees instead of radians.
+
+```js
+expr.evaluate("sind(90)");
+// 1
+
+expr.evaluate("cosd(0)");
+// 1
+
+expr.evaluate("tand(45)");
+// 1
+
+expr.evaluate("asind(1)");
+// 90
+```
+
+### Expression Chaining
+
+Chain multiple evaluations with `chain()`. Each expression can reference the previous result via `ans`.
+
+```js
+const c = expr.chain();
+c.setVariable("x", 25);
+c.evaluate("sqrt(x) + 3");
+c.evaluate("ans * 2");
+c.done();
+// 16
+```
+
+### State Serialization
+
+Save and restore the full engine state.
+
+```js
+const state = expr.exportState();
+// later:
+const expr2 = new Exprify();
+expr2.importState(state);
 ```
 
 ### String Utilities
@@ -514,6 +630,45 @@ expr.evaluate('leafCount(parse("{a: 22/7, b: 10^(1/2)}"))');
 | `expand` | Expand polynomial expression | `expand("(x+1)^2")` | `"x^2 + 2x + 1"` |
 | `factor` | Factor polynomial | `factor("x^2-5x+6")` | `"(x-2)(x-3)"` |
 | `solve` | Solve polynomial equation | `solve("x^2-4=0")` | `[-2,2]` |
+| `sind` | Sine (degrees) | `sind(90)` | `1` |
+| `cosd` | Cosine (degrees) | `cosd(0)` | `1` |
+| `tand` | Tangent (degrees) | `tand(45)` | `1` |
+| `asind` | Arc sine (degrees) | `asind(1)` | `90` |
+| `acosd` | Arc cosine (degrees) | `acosd(0)` | `90` |
+| `atand` | Arc tangent (degrees) | `atand(1)` | `45` |
+| `atand2` | Arc tangent y/x (degrees) | `atand2(1,1)` | `45` |
+| `acot` | Arc cotangent | `acot(1)` | `0.7854` |
+| `asec` | Arc secant | `asec(2)` | `1.0472` |
+| `acsc` | Arc cosecant | `acsc(2)` | `0.5236` |
+| `acoth` | Inverse hyperbolic cotangent | `acoth(2)` | `0.5493` |
+| `asech` | Inverse hyperbolic secant | `asech(0.5)` | `1.317` |
+| `acsch` | Inverse hyperbolic cosecant | `acsch(0.5)` | `1.4436` |
+| `hypot` | Pythagorean sum | `hypot(3,4)` | `5` |
+| `cbrt` | Cube root | `cbrt(27)` | `3` |
+| `log2` | Base-2 logarithm | `log2(8)` | `3` |
+| `log1p` | Natural log of (1+x) | `log1p(0)` | `0` |
+| `expm1` | e^x - 1 | `expm1(1)` | `1.7183` |
+| `erf` | Error function | `erf(1)` | `0.8427` |
+| `lgamma` | Log-gamma function | `lgamma(1)` | `0` |
+| `beta` | Beta function | `beta(2,3)` | `0.0833` |
+| `quantile` | Quantile (p in [0,1]) | `quantile([1,2,3,4,5], 0.5)` | `3` |
+| `percentile` | Percentile (p in [0,100]) | `percentile([1,2,3,4,5], 50)` | `3` |
+| `covariance` | Sample covariance | `covariance([1,2,3],[4,5,6])` | `3` |
+| `corr` | Pearson correlation | `corr([1,2,3],[4,5,6])` | `1` |
+| `randomInt` | Random integer [min, max] | `randomInt(1,6)` | e.g. `4` |
+| `randomNormal` | Normal distribution sample | `randomNormal(0,1)` | e.g. `-0.23` |
+| `bitAnd` | Bitwise AND | `bitAnd(5,3)` | `1` |
+| `bitOr` | Bitwise OR | `bitOr(5,3)` | `7` |
+| `bitXor` | Bitwise XOR | `bitXor(5,3)` | `6` |
+| `bitNot` | Bitwise NOT | `bitNot(0)` | `-1` |
+| `fraction` | Create exact fraction | `fraction(1,3)` | `"1/3"` |
+| `numer` | Fraction numerator | `numer(fraction(3,4))` | `3` |
+| `denom` | Fraction denominator | `denom(fraction(3,4))` | `4` |
+| `isFraction` | Check if value is a fraction | `isFraction(5)` | `false` |
+| `bignumber` | Create arbitrary-precision number | `bignumber("0.1")` | `"0.1"` |
+| `isBigNumber` | Check if value is a BigNumber | `isBigNumber(5)` | `false` |
+
+> **Full reference**: See the [searchable function table](docs/functions.html) for all ~130 built-in functions.
 
 ## Return Types
 
