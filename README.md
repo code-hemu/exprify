@@ -25,7 +25,7 @@
 - **Exact fractions** - `expr.evaluate("fraction(1,3) + fraction(1,6)")` · [docs](docs/datatypes/fractions.md)
 - **Calculus & statistics** - `expr.evaluate('integral("x^2", 0, 1)')` · [docs](docs/reference/functions.md)
 - **Lambda expressions** - `expr.evaluate('map([1,2,3], x -> x^2)')` · [docs](docs/expressions/customization.md)
-- **Expression chaining** - `c.evaluate("sqrt(x)").evaluate("ans * 2").done()` · [docs](docs/core/chaining.md)
+- **Expression chaining** - `expr.evaluate("sqrt(x)").evaluate("ans * 2").done()` · [docs](docs/core/chaining.md)
 - **State serialization** - `expr.exportState()` / `expr.importState(state)` · [docs](docs/core/serialization.md)
 - **Degree-mode trig** - `expr.evaluate("sind(90)")` · [docs](docs/reference/functions.md)
 
