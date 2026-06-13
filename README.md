@@ -77,6 +77,8 @@ console.log(expr.evaluate("5 + 7 * 2"));
 
 `unpkg` resolves to the browser bundle from `dist/exprify.min.js`.
 
+**Explore online**: Try the [interactive playground](docs/playground.html) or browse the [API docs](docs/index.html) and [function reference](docs/functions.html).
+
 ## Module Formats
 
 The package ships a separate build for each consumer, and `package.json`'s `exports` field routes each import style to the right file:
@@ -542,131 +544,10 @@ expr.evaluate('leafCount(parse("{a: 22/7, b: 10^(1/2)}"))');
 | `clamp` | Clamp value to range | `clamp(15, 0, 10)` | `10` |
 | `sin` | Sine (radians) | `sin(pi/2)` | `1` |
 | `cos` | Cosine (radians) | `cos(pi)` | `-1` |
-| `tan` | Tangent (radians) | `tan(pi/4)` | `1` |
-| `asin` | Arc sine | `asin(0)` | `0` |
-| `acos` | Arc cosine | `acos(1)` | `0` |
-| `atan` | Arc tangent | `atan(1)` | `0.7854` |
-| `sec` | Secant | `sec(pi/3)` | `2` |
-| `csc` | Cosecant | `csc(pi/2)` | `1` |
-| `cot` | Cotangent | `cot(pi/4)` | `1` |
-| `sinh` | Hyperbolic sine | `sinh(0)` | `0` |
-| `cosh` | Hyperbolic cosine | `cosh(0)` | `1` |
-| `tanh` | Hyperbolic tangent | `tanh(0)` | `0` |
-| `asinh` | Inverse hyperbolic sine | `asinh(0)` | `0` |
-| `acosh` | Inverse hyperbolic cosine | `acosh(1)` | `0` |
-| `atanh` | Inverse hyperbolic tangent | `atanh(0)` | `0` |
-| `log` | Natural logarithm | `log(e)` | `1` |
-| `log10` | Base-10 logarithm | `log10(100)` | `2` |
-| `exp` | Exponential (e^x) | `exp(0)` | `1` |
-| `max` | Maximum of values | `max(2, 5, 3)` | `5` |
-| `min` | Minimum of values | `min(2, 5, 3)` | `2` |
-| `sum` | Sum of values | `sum(1, 2, 3)` | `6` |
-| `prod` | Product of values | `prod(1, 2, 3)` | `6` |
-| `mean` | Arithmetic mean | `mean(1, 2, 3)` | `2` |
-| `median` | Median value | `median(1, 3, 2)` | `2` |
-| `mode` | Most frequent value | `mode(1, 2, 2, 3)` | `2` |
-| `std` | Sample standard deviation | `std(1, 2, 3)` | `1` |
-| `variance` | Sample variance | `variance(1, 2, 3)` | `1` |
-| `range` | Difference max - min | `range(1, 3, 5)` | `4` |
-| `gcd` | Greatest common divisor | `gcd(12, 18)` | `6` |
-| `lcm` | Least common multiple | `lcm(12, 18)` | `36` |
-| `factorial` | Factorial (n!) | `factorial(5)` | `120` |
-| `isPrime` | Primality test | `isPrime(17)` | `true` |
-| `primeFactors` | Prime factorization | `primeFactors(12)` | `[2,2,3]` |
-| `fibonacci` | Nth Fibonacci number | `fibonacci(10)` | `55` |
-| `nCr` | Combinations (n choose r) | `nCr(5, 2)` | `10` |
-| `nPr` | Permutations | `nPr(5, 2)` | `20` |
-| `gamma` | Gamma function | `gamma(5)` | `24` |
-| `det` | Matrix determinant | `det([-1,2;3,1])` | `-7` |
-| `lsolve` | Solve linear system | `lsolve([-2,3;2,1], [11,9])` | matrix JSON |
-| `lup` | LUP decomposition | `lup([[2,1];[1,4]])` | matrix JSON |
-| `lyap` | Solve Lyapunov equation | `lyap([[-2,0];[1,-4]], [[3,1];[1,3]])` | matrix JSON |
-| `qr` | QR decomposition | `qr([[1,-1,4];[1,4,-2];[1,4,2];[1,-1,0]])` | matrix JSON |
-| `polynomialRoot` | Find polynomial roots | `polynomialRoot(-6, 11, -6, 1)` | `[1,3,2]` |
-| `transpose` | Matrix transpose | `transpose([[1,2];[3,4]])` | matrix JSON |
-| `inverse` | Matrix inverse | `inverse([[1,2];[3,4]])` | matrix JSON |
-| `trace` | Sum of diagonal elements | `trace([[1,2];[3,4]])` | `5` |
-| `rank` | Matrix rank | `rank([[1,2];[3,4]])` | `2` |
-| `rref` | Reduced row echelon form | `rref([[1,2,3];[4,5,6]])` | matrix JSON |
-| `minor` | Matrix minor (submatrix det) | `minor([[1,2];[3,4]], 0, 0)` | `4` |
-| `cofactor` | Matrix cofactor | `cofactor([[1,2];[3,4]], 0, 1)` | `-3` |
-| `cross` | 3D cross product | `cross([1,0,0], [0,1,0])` | `[0,0,1]` |
-| `normalize` | Unit vector | `normalize([3,4])` | `[0.6,0.8]` |
-| `angle` | Angle between vectors | `angle([1,0], [0,1])` | `1.5708` |
-| `projection` | Scalar projection | `projection([3,4], [1,0])` | `3` |
-| `identity` | Identity matrix (n×n) | `identity(3)` | matrix JSON |
-| `eye` | Identity matrix alias | `eye(2)` | matrix JSON |
-| `zeros` | Zero matrix (n×m) | `zeros(2, 3)` | matrix JSON |
-| `ones` | Ones matrix (n×m) | `ones(2, 2)` | matrix JSON |
-| `diag` | Diagonal matrix from array | `diag([1,2,3])` | matrix JSON |
-| `cholesky` | Cholesky decomposition | `cholesky([[4,2];[2,3]])` | matrix JSON |
-| `eig` | Eigenvalues & vectors (2×2) | `eig([[1,2];[2,1]])` | JSON |
-| `svd` | SVD (2×2) | `svd([[1,0];[0,2]])` | JSON |
-| `simplify` | Simplify polynomial | `simplify("x^2 + 2x^2")` | `3 * x^2` |
-| `derivative` | Differentiate polynomial | `derivative("x^3")` | `3 * x^2` |
 | `rationalize` | Rationalize expression | `rationalize("1/x + 1/(x+1)")` | `(2x + 1)/(x^2 + x)` |
-| `if` | Conditional | `if(1 < 2, "a", "b")` | `"a"` |
-| `length` | String or array length | `length("hello")` | `5` |
-| `typeof` | Type of value | `typeof(42)` | `"number"` |
-| `random` | Random number (0, 1) | `random()` | e.g. `0.374` |
-| `leafCount` | Count expression leaves | `leafCount("e^(i*pi)-1")` | `4` |
-| `parse` | Return expression string | `parse("a + b")` | `"a + b"` |
-| `split` | Split string by separator | `split("a,b,c", ",")` | `["a","b","c"]` |
-| `join` | Join array with separator | `join(["a","b"], ",")` | `"a,b"` |
-| `upper` | Uppercase string | `upper("hi")` | `"HI"` |
-| `lower` | Lowercase string | `lower("HI")` | `"hi"` |
-| `trim` | Trim whitespace | `trim(" hi ")` | `"hi"` |
-| `replace` | Replace substring | `replace("hi","i","o")` | `"ho"` |
-| `substring` | Extract substring | `substring("hello",1,4)` | `"ell"` |
-| `map` | Apply function to array | `map([1,4,9],"sqrt")` | `[1,2,3]` |
-| `filter` | Filter array by predicate | `filter([1,2,3,4,5],"isPrime")` | `[2,3,5]` |
-| `integral` | Numeric integral (Simpson) | `integral("x^2",0,1)` | `~0.333` |
-| `sigma` | Summation notation | `sigma("n",1,10,"n")` | `55` |
-| `pi` | Product notation | `pi("n",1,5,"n")` | `120` |
-| `limit` | Numeric limit | `limit("1/x","x",1e6,"right")` | `~0` |
-| `substitute` | Replace variable with value | `substitute("x+1","x",5)` | `6` |
-| `expand` | Expand polynomial expression | `expand("(x+1)^2")` | `"x^2 + 2x + 1"` |
-| `factor` | Factor polynomial | `factor("x^2-5x+6")` | `"(x-2)(x-3)"` |
-| `solve` | Solve polynomial equation | `solve("x^2-4=0")` | `[-2,2]` |
-| `sind` | Sine (degrees) | `sind(90)` | `1` |
-| `cosd` | Cosine (degrees) | `cosd(0)` | `1` |
-| `tand` | Tangent (degrees) | `tand(45)` | `1` |
-| `asind` | Arc sine (degrees) | `asind(1)` | `90` |
-| `acosd` | Arc cosine (degrees) | `acosd(0)` | `90` |
-| `atand` | Arc tangent (degrees) | `atand(1)` | `45` |
-| `atand2` | Arc tangent y/x (degrees) | `atand2(1,1)` | `45` |
-| `acot` | Arc cotangent | `acot(1)` | `0.7854` |
-| `asec` | Arc secant | `asec(2)` | `1.0472` |
-| `acsc` | Arc cosecant | `acsc(2)` | `0.5236` |
-| `acoth` | Inverse hyperbolic cotangent | `acoth(2)` | `0.5493` |
-| `asech` | Inverse hyperbolic secant | `asech(0.5)` | `1.317` |
-| `acsch` | Inverse hyperbolic cosecant | `acsch(0.5)` | `1.4436` |
-| `hypot` | Pythagorean sum | `hypot(3,4)` | `5` |
-| `cbrt` | Cube root | `cbrt(27)` | `3` |
-| `log2` | Base-2 logarithm | `log2(8)` | `3` |
-| `log1p` | Natural log of (1+x) | `log1p(0)` | `0` |
-| `expm1` | e^x - 1 | `expm1(1)` | `1.7183` |
-| `erf` | Error function | `erf(1)` | `0.8427` |
-| `lgamma` | Log-gamma function | `lgamma(1)` | `0` |
-| `beta` | Beta function | `beta(2,3)` | `0.0833` |
-| `quantile` | Quantile (p in [0,1]) | `quantile([1,2,3,4,5], 0.5)` | `3` |
-| `percentile` | Percentile (p in [0,100]) | `percentile([1,2,3,4,5], 50)` | `3` |
-| `covariance` | Sample covariance | `covariance([1,2,3],[4,5,6])` | `3` |
-| `corr` | Pearson correlation | `corr([1,2,3],[4,5,6])` | `1` |
-| `randomInt` | Random integer [min, max] | `randomInt(1,6)` | e.g. `4` |
-| `randomNormal` | Normal distribution sample | `randomNormal(0,1)` | e.g. `-0.23` |
-| `bitAnd` | Bitwise AND | `bitAnd(5,3)` | `1` |
-| `bitOr` | Bitwise OR | `bitOr(5,3)` | `7` |
-| `bitXor` | Bitwise XOR | `bitXor(5,3)` | `6` |
-| `bitNot` | Bitwise NOT | `bitNot(0)` | `-1` |
-| `fraction` | Create exact fraction | `fraction(1,3)` | `"1/3"` |
-| `numer` | Fraction numerator | `numer(fraction(3,4))` | `3` |
-| `denom` | Fraction denominator | `denom(fraction(3,4))` | `4` |
-| `isFraction` | Check if value is a fraction | `isFraction(5)` | `false` |
 | `bignumber` | Create arbitrary-precision number | `bignumber("0.1")` | `"0.1"` |
-| `isBigNumber` | Check if value is a BigNumber | `isBigNumber(5)` | `false` |
 
-> **Full reference**: See the [searchable function table](docs/functions.html) for all ~130 built-in functions.
+> **Full reference**: See the [searchable function table](https://code-hemu.github.io/exprify/functions.html) for all ~130 built-in functions.
 
 ## Return Types
 
