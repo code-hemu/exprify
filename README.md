@@ -177,7 +177,7 @@ This is particularly convenient for one-off helpers that do not warrant a full `
 ## Built-in Functions (Selected)
 
 | Function | Description | Example | Result |
-|||||
+|---|---|---|---|
 | `abs` | Absolute value | `abs(-5)` | `5` |
 | `round` | Round to nearest integer | `round(3.7)` | `4` |
 | `floor` | Round down | `floor(3.7)` | `3` |
@@ -188,13 +188,16 @@ This is particularly convenient for one-off helpers that do not warrant a full `
 ## Return Types
 
 | Type | Example expression | Result |
-||||
+|---|---|---|
 | Number / BigInt / Boolean | `2 + 2`, `true && false` | `4`, `false` |
 | String | `"hello" + " world"` | `"hello world"` |
 | Unit string | `2 inch to cm` | `"5.08 cm"` |
 | Complex string | `3 + 2i` | `"3 + 2i"` |
+| Matrix JSON | `[1,2;3,4]` | `{"exprify":"DenseMatrix",...}` |
+| Structured JSON | `lup(...)`, `rationalize(..., true)` | JSON object string |
 | Function | `x -> x^2` | Native JS function |
 | Array | `1:5` | `[1,2,3,4,5]` |
+
 
 ## Manual Build
 
