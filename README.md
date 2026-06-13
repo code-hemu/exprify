@@ -1,5 +1,9 @@
 [![Exprify Banner](https://raw.githubusercontent.com/code-hemu/Exprify/refs/heads/main/docs/assets/capture.jpg)](https://github.com/code-hemu/Exprify)
 
+
+**Exprify** (Math **Expr**ession + Simp**lify**) is a fast, lightweight JavaScript expression parser and evaluator. It is designed for math applications, scientific computing, data visualization tools, calculators, and other complex workflows that run in the browser and in Node.js. It supports basic arithmetic, variables, user-defined functions, and built-in operators for comparison, logic, and string manipulation.
+
+
 [![Version](https://img.shields.io/npm/v/exprify)](https://www.npmjs.com/package/exprify)
 [![Downloads](https://img.shields.io/npm/dt/exprify)](https://www.npmjs.com/package/exprify)
 [![License](https://img.shields.io/github/license/code-hemu/exprify)](https://github.com/code-hemu/exprify/blob/master/LICENSE)
@@ -10,24 +14,20 @@
 [![Sponsor](https://img.shields.io/github/sponsors/code-hemu)](https://github.com/sponsors/code-hemu)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/code-hemu/exprify)
 
-**Exprify** (**Math Expr**ession + Simp**lify**) parses a string into an expression tree, evaluates it with a given set of variables, and lets you chain or compose operations together - in the browser and in Node.js.
-
 ## Features
 
-| Capability | Example | Docs |
-|---|---|---|
-| **Arithmetic & Variables** | `expr.evaluate("5 + 7 * 2")` | [numbers](docs/datatypes/numbers.md) |
-| **Unit conversion** | `expr.evaluate("2 inch to cm")` | [units](docs/datatypes/units.md) |
-| **Matrix operations** | `expr.evaluate("det([-1,2;3,1])")` | [matrices](docs/datatypes/matrices.md) |
-| **Complex numbers** | `expr.evaluate("9/3 + 2i")` | [complex](docs/datatypes/complex_numbers.md) |
-| **Symbolic math** | `expr.evaluate('expand("(x+1)^2")')` | [algebra](docs/expressions/algebra.md) |
-| **Arbitrary precision** | `expr.evaluate('bignumber("0.1") + bignumber("0.2")')` | [bignumbers](docs/datatypes/bignumbers.md) |
-| **Exact fractions** | `expr.evaluate("fraction(1,3) + fraction(1,6)")` | [fractions](docs/datatypes/fractions.md) |
-| **Calculus & statistics** | `expr.evaluate('integral("x^2", 0, 1)')` | [functions](docs/reference/functions.md) |
-| **Lambda expressions** | `expr.evaluate('map([1,2,3], x -> x^2)')` | [customization](docs/expressions/customization.md) |
-| **Expression chaining** | `c.evaluate("sqrt(x)").evaluate("ans * 2").done()` | [chaining](docs/core/chaining.md) |
-| **State serialization** | `expr.exportState()` / `expr.importState(state)` | [serialization](docs/core/serialization.md) |
-| **Degree-mode trig** | `expr.evaluate("sind(90)")` | [functions](docs/reference/functions.md) |
+- **Arithmetic & Variables** - `expr.evaluate("5 + 7 * 2")` · [docs](docs/datatypes/numbers.md)
+- **Unit conversion** - `expr.evaluate("2 inch to cm")` · [docs](docs/datatypes/units.md)
+- **Matrix operations** - `expr.evaluate("det([-1,2;3,1])")` · [docs](docs/datatypes/matrices.md)
+- **Complex numbers** - `expr.evaluate("9/3 + 2i")` · [docs](docs/datatypes/complex_numbers.md)
+- **Symbolic math** - `expr.evaluate('expand("(x+1)^2")')` · [docs](docs/expressions/algebra.md)
+- **Arbitrary precision** - `expr.evaluate('bignumber("0.1") + bignumber("0.2")')` · [docs](docs/datatypes/bignumbers.md)
+- **Exact fractions** - `expr.evaluate("fraction(1,3) + fraction(1,6)")` · [docs](docs/datatypes/fractions.md)
+- **Calculus & statistics** - `expr.evaluate('integral("x^2", 0, 1)')` · [docs](docs/reference/functions.md)
+- **Lambda expressions** - `expr.evaluate('map([1,2,3], x -> x^2)')` · [docs](docs/expressions/customization.md)
+- **Expression chaining** - `c.evaluate("sqrt(x)").evaluate("ans * 2").done()` · [docs](docs/core/chaining.md)
+- **State serialization** - `expr.exportState()` / `expr.importState(state)` · [docs](docs/core/serialization.md)
+- **Degree-mode trig** - `expr.evaluate("sind(90)")` · [docs](docs/reference/functions.md)
 
 ## Installation
 
@@ -68,19 +68,6 @@ expr.evaluate("5 + 7 * 2");        // 19
   expr.evaluate("(10 + 5) * 2");   // 30
 </script>
 ```
-
-## Module Formats
-
-`package.json`'s `exports` field routes each import style to the correct build automatically.
-
-| Consumer | Resolved file | Notes |
-|---|---|---|
-| `import Exprify from "exprify"` | `dist/exprify.esm.js` | Default export is the `Exprify` class |
-| `require("exprify")` | `dist/exprify.cjs.cjs` | `module.exports` is the `Exprify` class |
-| `<script src="https://unpkg.com/exprify">` | `dist/exprify.min.js` | UMD build; exposes `Exprify` as a global |
-| `import "exprify/dist/exprify.js"` | `dist/exprify.js` | Unminified UMD for bundlers that prefer it |
-
-> The `.cjs` extension keeps the CommonJS bundle loadable via `require()` even though the package uses `"type": "module"`.
 
 ## API
 
@@ -188,8 +175,6 @@ expr.evaluate("hyp(3, 4)");                // 5
 | String | `"hello" + " world"` | `"hello world"` |
 | Unit string | `2 inch to cm` | `"5.08 cm"` |
 | Complex string | `3 + 2i` | `"3 + 2i"` |
-| Matrix JSON | `[1,2;3,4]` | `{"exprify":"DenseMatrix",...}` |
-| Structured JSON | `lup(...)`, `rationalize(..., true)` | JSON object string |
 | Function | `x -> x^2` | Native JS function |
 | Array | `1:5` | `[1,2,3,4,5]` |
 
