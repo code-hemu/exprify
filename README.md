@@ -1,6 +1,4 @@
-# Exprify
-
-> A JavaScript expression parser and evaluator - built for math, science, and complex workflows.
+[![Exprify Banner](https://raw.githubusercontent.com/code-hemu/Exprify/refs/heads/main/docs/assets/capture.jpg)](https://github.com/code-hemu/Exprify)
 
 [![Version](https://img.shields.io/npm/v/exprify)](https://www.npmjs.com/package/exprify)
 [![Downloads](https://img.shields.io/npm/dt/exprify)](https://www.npmjs.com/package/exprify)
@@ -14,42 +12,30 @@
 [![Sponsor](https://img.shields.io/github/sponsors/code-hemu)](https://github.com/sponsors/code-hemu)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/code-hemu/exprify)
 
-[![Exprify Banner](https://raw.githubusercontent.com/code-hemu/Exprify/refs/heads/main/docs/assets/capture.jpg)](https://github.com/code-hemu/Exprify)
-
----
-
-## What is Exprify?
-
 **Exprify** (**Math Expr**ession + Simp**lify**) parses a string into an expression tree, evaluates it with a given set of variables, and lets you chain or compose operations together - in the browser and in Node.js.
-
----
 
 ## Features
 
 | Capability | Example | Docs |
 |---|---|---|
-| **Arithmetic & Variables** | `expr.evaluate("5 + 7 * 2")` → `19` | [docs/arithmetic.md](docs/arithmetic.md) |
-| **Unit conversion** | `expr.evaluate("2 inch to cm")` → `"5.08 cm"` | [docs/units.md](docs/units.md) |
-| **Matrix operations** | `expr.evaluate("det([-1,2;3,1])")` → `-7` | [docs/matrices.md](docs/matrices.md) |
-| **Complex numbers** | `expr.evaluate("9/3 + 2i")` → `"3 + 2i"` | [docs/complex.md](docs/complex.md) |
-| **Symbolic math** | `expr.evaluate('expand("(x+1)^2")')` → `"x^2 + 2x + 1"` | [docs/algebra.md](docs/algebra.md) |
-| **Arbitrary precision** | `expr.evaluate('bignumber("0.1") + bignumber("0.2")')` → `"0.3"` | [docs/bignumber.md](docs/bignumber.md) |
-| **Exact fractions** | `expr.evaluate("fraction(1,3) + fraction(1,6)")` → `"1/2"` | [docs/fractions.md](docs/fractions.md) |
-| **Calculus & statistics** | `expr.evaluate('integral("x^2", 0, 1)')` → `~0.333` | [docs/calculus.md](docs/calculus.md) |
-| **Lambda expressions** | `expr.evaluate('map([1,2,3], x -> x^2)')` → `[1,4,9]` | [docs/lambdas.md](docs/lambdas.md) |
-| **Expression chaining** | `c.evaluate("sqrt(x)").evaluate("ans * 2").done()` | [docs/chaining.md](docs/chaining.md) |
-| **State serialization** | `expr.exportState()` / `expr.importState(state)` | [docs/serialization.md](docs/serialization.md) |
-| **Degree-mode trig** | `expr.evaluate("sind(90)")` → `1` | [docs/trig.md](docs/trig.md) |
-
----
+| **Arithmetic & Variables** | `expr.evaluate("5 + 7 * 2")` `19` | [syntax](docs/expressions/syntax.md) |
+| **Unit conversion** | `expr.evaluate("2 inch to cm")` `"5.08 cm"` | [units](docs/datatypes/units.md) |
+| **Matrix operations** | `expr.evaluate("det([-1,2;3,1])")`-`-7` | [matrices](docs/datatypes/matrices.md) |
+| **Complex numbers** | `expr.evaluate("9/3 + 2i")`-`"3 + 2i"` | [complex](docs/datatypes/complex_numbers.md) |
+| **Symbolic math** | `expr.evaluate('expand("(x+1)^2")')`-`"x^2 + 2x + 1"` | [algebra](docs/expressions/algebra.md) |
+| **Arbitrary precision** | `expr.evaluate('bignumber("0.1") + bignumber("0.2")')`-`"0.3"` | [bignumbers](docs/datatypes/bignumbers.md) |
+| **Exact fractions** | `expr.evaluate("fraction(1,3) + fraction(1,6)")`-`"1/2"` | [fractions](docs/datatypes/fractions.md) |
+| **Calculus & statistics** | `expr.evaluate('integral("x^2", 0, 1)')`-`~0.333` | [functions](docs/functions.md) |
+| **Lambda expressions** | `expr.evaluate('map([1,2,3], x -> x^2)')`-`[1,4,9]` | [customization](docs/expressions/customization.md) |
+| **Expression chaining** | `c.evaluate("sqrt(x)").evaluate("ans * 2").done()` | [chaining](docs/core/chaining.md) |
+| **State serialization** | `expr.exportState()` / `expr.importState(state)` | [serialization](docs/core/serialization.md) |
+| **Degree-mode trig** | `expr.evaluate("sind(90)")`-`1` | [functions](docs/expressions/functions.md) |
 
 ## Installation
 
 ```bash
 npm install exprify
 ```
-
----
 
 ## Quick Start
 
@@ -85,8 +71,6 @@ expr.evaluate("5 + 7 * 2");        // 19
 </script>
 ```
 
----
-
 ## Module Formats
 
 `package.json`'s `exports` field routes each import style to the correct build automatically.
@@ -100,15 +84,11 @@ expr.evaluate("5 + 7 * 2");        // 19
 
 > The `.cjs` extension keeps the CommonJS bundle loadable via `require()` even though the package uses `"type": "module"`.
 
----
-
 ## API
 
 ### `new Exprify()`
 
 Creates a new evaluator instance with isolated state for variables, functions, units, and a compiled-expression cache.
-
----
 
 ### `expr.evaluate(expression, scope?)`
 
@@ -121,8 +101,6 @@ expr.setVariable("x", 100);
 expr.evaluate("x + 1", { x: 5 });          // 6
 ```
 
----
-
 ### `expr.parse(expression)`
 
 Returns `{ tokens, ast }` - the raw token list and abstract syntax tree.
@@ -130,8 +108,6 @@ Returns `{ tokens, ast }` - the raw token list and abstract syntax tree.
 ```js
 const { tokens, ast } = expr.parse("2 inch to cm");
 ```
-
----
 
 ### `expr.compile(expression)`
 
@@ -143,8 +119,6 @@ area({ width: 6, height: 4 });             // 24
 area({ width: 3, height: 9 });             // 27
 ```
 
----
-
 ### `expr.setVariable(name, value)` / `expr.getVariable(name)`
 
 Stores and retrieves named values that persist across evaluations.
@@ -155,8 +129,6 @@ expr.setVariable("y", 5);
 expr.evaluate("x + y * 2");                // 20
 ```
 
----
-
 ### `expr.addFunction(name, fn)`
 
 Registers a custom JavaScript function, making it callable inside expressions.
@@ -165,8 +137,6 @@ Registers a custom JavaScript function, making it callable inside expressions.
 expr.addFunction("double", (n) => n * 2);
 expr.evaluate("double(5) + 3");            // 13
 ```
-
----
 
 ### `expr.chain()`
 
@@ -180,8 +150,6 @@ c.evaluate("ans * 2");                     // ans = 16
 c.done();                                  // 16
 ```
 
----
-
 ### `expr.exportState()` / `expr.importState(state)`
 
 Serializes and restores the full engine state - variables, functions, and units.
@@ -194,8 +162,6 @@ const expr2 = new Exprify();
 expr2.importState(state);
 ```
 
----
-
 ### Inline Function Definitions
 
 Functions can be defined directly inside expressions and reused immediately.
@@ -204,8 +170,6 @@ Functions can be defined directly inside expressions and reused immediately.
 expr.evaluate("hyp(a, b) = sqrt(a^2 + b^2)");
 expr.evaluate("hyp(3, 4)");                // 5
 ```
-
----
 
 ## Built-in Functions (Selected)
 
@@ -217,8 +181,6 @@ expr.evaluate("hyp(3, 4)");                // 5
 | `ceil` | Round up | `ceil(3.2)` | `4` |
 
 > See the [full searchable function reference](docs/reference/functions.md) for all ~130 built-in functions.
-
----
 
 ## Return Types
 
@@ -233,20 +195,16 @@ expr.evaluate("hyp(3, 4)");                // 5
 | Function | `x -> x^2` | Native JS function |
 | Array | `1:5` | `[1,2,3,4,5]` |
 
----
-
 ## Manual Build
 
 ```bash
-git clone https://github.com/code-hemu/Exprify.git
+git clone https://github.com/code-hemu/exprify.git
 cd Exprify
 npm install
 npm run build
 ```
 
 Output is written to `dist/`.
-
----
 
 ## Testing
 
@@ -256,8 +214,6 @@ npm test
 
 Tested in CI across Node 20 and 22. See `.github/workflows/ci.yml` for details.
 
----
-
 ## Contributing
 
 1. Fork the repository.
@@ -265,9 +221,6 @@ Tested in CI across Node 20 and 22. See `.github/workflows/ci.yml` for details.
 3. Commit your changes: `git commit -m "Add your feature"`
 4. Push and open a pull request.
 
----
-
 ## License
 
-Exprify is licensed under **GPL-3.0**.  
-Copyright © [Nirmal Paul](https://github.com/nirmalpaul383/).
+Exprify is licensed under **GPL-3.0**. Copyright © [Nirmal Paul](https://github.com/nirmalpaul383/).
