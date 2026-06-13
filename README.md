@@ -10,8 +10,6 @@
 [![Sponsor](https://img.shields.io/github/sponsors/code-hemu)](https://github.com/sponsors/code-hemu)
 [![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/code-hemu/exprify)
 
-[![Exprify Banner](https://raw.githubusercontent.com/code-hemu/Exprify/refs/heads/main/docs/assets/capture.jpg)](https://github.com/code-hemu/Exprify)
-
 **Exprify** (**Math Expr**ession + Simp**lify**) parses a string into an expression tree, evaluates it with a given set of variables, and lets you chain or compose operations together - in the browser and in Node.js.
 
 ## Features
