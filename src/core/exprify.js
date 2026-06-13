@@ -485,7 +485,7 @@ class exprify {
         throw new Error('expand() could not identify variable');
       }
       const v = variableMatch[0];
-      const cleaned = expr.replace(/\s+/g, '').replace(/"/g, '\\"');
+      const cleaned = expr.replace(/\s+/g, '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
       const addStar = (/** @type {string} */ s) => s.replace(/(\d)([a-zA-Z_])/g, '$1*$2');
       const evalAt = (/** @type {number} */ x) =>
         this.evaluate(`substitute("${addStar(cleaned)}", "${v}", ${x})`);
@@ -663,7 +663,7 @@ class exprify {
       const variableMatch = cleaned.match(/[a-zA-Z_][a-zA-Z0-9_]*/);
       const v = variable || (variableMatch ? variableMatch[0] : 'x');
       const addStar = (/** @type {string} */ s) =>
-        s.replace(/"/g, '\\"').replace(/(\d)([a-zA-Z_])/g, '$1*$2');
+        s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/(\d)([a-zA-Z_])/g, '$1*$2');
       const cleanedExpr = addStar(cleaned);
       const maxPower = 6;
       const vals = [];
