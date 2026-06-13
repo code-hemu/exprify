@@ -25,11 +25,11 @@
 | **Symbolic math** | `expr.evaluate('expand("(x+1)^2")')` | [algebra](docs/expressions/algebra.md) |
 | **Arbitrary precision** | `expr.evaluate('bignumber("0.1") + bignumber("0.2")')` | [bignumbers](docs/datatypes/bignumbers.md) |
 | **Exact fractions** | `expr.evaluate("fraction(1,3) + fraction(1,6)")` | [fractions](docs/datatypes/fractions.md) |
-| **Calculus & statistics** | `expr.evaluate('integral("x^2", 0, 1)')` | [functions](docs/functions.md) |
+| **Calculus & statistics** | `expr.evaluate('integral("x^2", 0, 1)')` | [functions](docs/reference/functions.md) |
 | **Lambda expressions** | `expr.evaluate('map([1,2,3], x -> x^2)')` | [customization](docs/expressions/customization.md) |
 | **Expression chaining** | `c.evaluate("sqrt(x)").evaluate("ans * 2").done()` | [chaining](docs/core/chaining.md) |
 | **State serialization** | `expr.exportState()` / `expr.importState(state)` | [serialization](docs/core/serialization.md) |
-| **Degree-mode trig** | `expr.evaluate("sind(90)")` | [functions](docs/expressions/functions.md) |
+| **Degree-mode trig** | `expr.evaluate("sind(90)")` | [functions](docs/reference/functions.md) |
 
 ## Installation
 
