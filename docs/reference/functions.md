@@ -358,7 +358,7 @@ Beyond function calls, Exprify recognizes the following operators directly withi
 | `+ - * / % ^` | Standard arithmetic operators for addition, subtraction, multiplication, division, modulo, and exponentiation. | `2 + 3 * 4` |
 | Implicit multiplication | Allows numbers and parentheses to be multiplied without an explicit `*`, e.g. `2x` is treated as `2*x`, and `)(` is treated as `)*(`. | `2pi` |
 | `>` `<` `>=` `<=` `==` | Standard comparison operators for greater-than, less-than, greater-or-equal, less-or-equal, and equality. | `5 > 3` |
-| `&&` `||` `!` | Logical AND, OR, and NOT operators for combining or negating boolean expressions. | `true && false` |
+| `&&` or `!` | Logical AND, OR, and NOT operators for combining or negating boolean expressions. | `true && false` |
 | `??` | Nullish coalescing - returns the left-hand value unless it is null/undefined, in which case it returns the right-hand value. | `a ?? b` |
 | `=` `+=` `-=` `*=` `/=` | Assignment and compound assignment operators for setting and updating variable values. | `x = 5` |
 | `? :` | Ternary conditional - evaluates one of two expressions depending on whether a condition is true or false. | `x > 0 ? "pos" : "neg"` |
