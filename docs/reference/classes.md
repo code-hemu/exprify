@@ -1,4 +1,3 @@
-```markdown
 # Classes
 
 Exprify exposes a small set of public and internal classes that together provide expression parsing, evaluation, chaining, and high-precision arithmetic support.
@@ -79,4 +78,3 @@ const result = expr.evaluate('bignumber("0.1") + bignumber("0.2")');
 ```
 
 Most users will not need to interact with `ExprDecimal` directly, as it operates behind the scenes whenever `bignumber()` values are used in expressions.
-```
