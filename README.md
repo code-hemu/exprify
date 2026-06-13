@@ -16,7 +16,7 @@
 
 | Capability | Example | Docs |
 |---|---|---|
-| **Arithmetic & Variables** | `expr.evaluate("5 + 7 * 2")` | [syntax](docs/datatypes/numbers.md) |
+| **Arithmetic & Variables** | `expr.evaluate("5 + 7 * 2")` | [numbers](docs/datatypes/numbers.md) |
 | **Unit conversion** | `expr.evaluate("2 inch to cm")` | [units](docs/datatypes/units.md) |
 | **Matrix operations** | `expr.evaluate("det([-1,2;3,1])")` | [matrices](docs/datatypes/matrices.md) |
 | **Complex numbers** | `expr.evaluate("9/3 + 2i")` | [complex](docs/datatypes/complex_numbers.md) |
