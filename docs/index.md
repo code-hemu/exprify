@@ -1,6 +1,4 @@
----
-title: "Documentation"
----
+# Documentation
 
 **Exprify** (Math **Expr**ession + Simp**lify**) is a fast, lightweight JavaScript expression parser and evaluator. It is designed for math applications, scientific computing, data visualization tools, calculators, and other complex workflows that run in the browser and in Node.js.
 
