@@ -82,7 +82,9 @@ export function powFrac(a, exp) {
  * @param {{ n: any; }} v
  */
 export function numer(v) {
-  if (!isFraction(v)) {throw new Error('numer() expects a fraction');}
+  if (!isFraction(v)) {
+    throw new Error('numer() expects a fraction');
+  }
   return v.n;
 }
 
@@ -90,7 +92,9 @@ export function numer(v) {
  * @param {{ d: any; }} v
  */
 export function denom(v) {
-  if (!isFraction(v)) {throw new Error('denom() expects a fraction');}
+  if (!isFraction(v)) {
+    throw new Error('denom() expects a fraction');
+  }
   return v.d;
 }
 
@@ -98,7 +102,11 @@ export function denom(v) {
  * @param {{ d: number; n: any; }} v
  */
 export function formatFraction(v) {
-  if (!isFraction(v)) {return String(v);}
-  if (v.d === 1) {return String(v.n);}
+  if (!isFraction(v)) {
+    return String(v);
+  }
+  if (v.d === 1) {
+    return String(v.n);
+  }
   return `${v.n}/${v.d}`;
 }

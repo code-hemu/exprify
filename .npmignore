@@ -3,7 +3,10 @@
 
 docs/
 test/
+tools/
 node_modules/
+coverage/
+scripts/
 
 .gitignore
 .npmignore

@@ -571,7 +571,9 @@ function powFrac(a, exp) {
  * @param {{ n: any; }} v
  */
 function numer(v) {
-  if (!isFraction(v)) {throw new Error('numer() expects a fraction');}
+  if (!isFraction(v)) {
+    throw new Error('numer() expects a fraction');
+  }
   return v.n;
 }
 
@@ -579,7 +581,9 @@ function numer(v) {
  * @param {{ d: any; }} v
  */
 function denom(v) {
-  if (!isFraction(v)) {throw new Error('denom() expects a fraction');}
+  if (!isFraction(v)) {
+    throw new Error('denom() expects a fraction');
+  }
   return v.d;
 }
 
@@ -587,8 +591,12 @@ function denom(v) {
  * @param {{ d: number; n: any; }} v
  */
 function formatFraction(v) {
-  if (!isFraction(v)) {return String(v);}
-  if (v.d === 1) {return String(v.n);}
+  if (!isFraction(v)) {
+    return String(v);
+  }
+  if (v.d === 1) {
+    return String(v.n);
+  }
   return `${v.n}/${v.d}`;
 }
 
@@ -618,7 +626,7 @@ class ExprDecimal {
 
     if (typeof value === 'number') {
       if (!Number.isFinite(value)) {
-        throw new Error(`Cannot create ExprDecimal from ${  value}`);
+        throw new Error(`Cannot create ExprDecimal from ${value}`);
       }
       value = String(value);
     }
@@ -695,7 +703,9 @@ class ExprDecimal {
     const d = new ExprDecimal(0);
     d.#sign = sign;
     d.#int = int < 0n ? -int : int;
-    if (int < 0n) {d.#sign = -sign;}
+    if (int < 0n) {
+      d.#sign = -sign;
+    }
     d.#dp = dp;
     d.#normalize();
     return d;
@@ -739,7 +749,11 @@ class ExprDecimal {
   mod(other) {
     other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
     const quotient = this.div(other);
-    const truncated = quotient.#fromParts(quotient.#sign, quotient.#int - (quotient.#int % 10n ** BigInt(quotient.#dp > 0 ? 1 : 0)), 0);
+    const truncated = quotient.#fromParts(
+      quotient.#sign,
+      quotient.#int - (quotient.#int % 10n ** BigInt(quotient.#dp > 0 ? 1 : 0)),
+      0
+    );
     return this.minus(truncated.times(other));
   }
 
@@ -762,7 +776,9 @@ class ExprDecimal {
   negated() {
     const d = new ExprDecimal(this);
     d.#sign = -d.#sign;
-    if (d.#int === 0n) {d.#sign = 1;}
+    if (d.#int === 0n) {
+      d.#sign = 1;
+    }
     return d;
   }
 
@@ -800,19 +816,25 @@ class ExprDecimal {
       const coeffInt = intStr[0];
       const coeffFrac = intStr.slice(1).replace(/0+$/, '');
       let r = coeffInt;
-      if (coeffFrac) {r += `.${  coeffFrac}`;}
+      if (coeffFrac) {
+        r += `.${coeffFrac}`;
+      }
       r += 'e';
       r += exponent >= 0 ? '+' : '';
       r += exponent;
-      return this.#sign === -1 ? `-${  r}` : r;
+      return this.#sign === -1 ? `-${r}` : r;
     };
 
     if (edp === 0) {
-      if (s.length > 15) {return toScientific(s, s.length - 1);}
-      return this.#sign === -1 ? `-${  s}` : s;
+      if (s.length > 15) {
+        return toScientific(s, s.length - 1);
+      }
+      return this.#sign === -1 ? `-${s}` : s;
     }
 
-    while (s.length <= edp) {s = `0${  s}`;}
+    while (s.length <= edp) {
+      s = `0${s}`;
+    }
     const dotPos = s.length - edp;
     const intPartRaw = s.slice(0, dotPos);
     const intTrimmed = intPartRaw.replace(/^0+/, '') || '0';
@@ -827,7 +849,7 @@ class ExprDecimal {
     const intPart = intPartRaw || '0';
     const fracPart = fracRaw.replace(/0+$/, '');
     if (fracPart === '') {
-      return this.#sign === -1 ? `-${  intPart}` : intPart;
+      return this.#sign === -1 ? `-${intPart}` : intPart;
     }
     return `${this.#sign === -1 ? '-' : ''}${intPart}.${fracPart}`;
   }
@@ -1255,30 +1277,30 @@ function evaluateAST(node, context = {}) {
           case '%':
             value = current % right;
             break;
-      default:
-        throw nodeError(`Unknown compound operator ${node.operator}`);
+          default:
+            throw nodeError(`Unknown compound operator ${node.operator}`);
+        }
+      } else {
+        value = evaluateAST(node.right, context);
+      }
+
+      if (node.left.type === 'Identifier') {
+        vars.set(node.left.name, value);
+        if (node.right.type === 'ArrayExpression') {
+          return wrapDenseMatrix(unwrapDenseMatrix(value));
+        }
+        return value;
+      }
+
+      if (node.left.type === 'IndexExpression' && node.left.object.type === 'Identifier') {
+        const currentValue = vars.get(node.left.object.name);
+        const assigned = assignMatrixIndex(currentValue, node.left.selectors, value);
+        vars.set(node.left.object.name, assigned.updatedMatrix);
+        return assigned.selectionResult;
+      }
+
+      throw nodeError('Invalid assignment target');
     }
-  } else {
-    value = evaluateAST(node.right, context);
-  }
-
-  if (node.left.type === 'Identifier') {
-    vars.set(node.left.name, value);
-    if (node.right.type === 'ArrayExpression') {
-      return wrapDenseMatrix(unwrapDenseMatrix(value));
-    }
-    return value;
-  }
-
-  if (node.left.type === 'IndexExpression' && node.left.object.type === 'Identifier') {
-    const currentValue = vars.get(node.left.object.name);
-    const assigned = assignMatrixIndex(currentValue, node.left.selectors, value);
-    vars.set(node.left.object.name, assigned.updatedMatrix);
-    return assigned.selectionResult;
-  }
-
-  throw nodeError('Invalid assignment target');
-}
 
     // User-defined function via f(a,b)=expr: closure evaluates body in a new scope with params bound
     case 'FunctionAssignmentExpression': {
@@ -1301,8 +1323,12 @@ function evaluateAST(node, context = {}) {
 
       switch (node.operator) {
         case '-':
-          if (isBigNumber(val)) {return val.negated();}
-          if (isComplex(val)) {return simplifyComplex({ re: -val.re, im: -val.im });}
+          if (isBigNumber(val)) {
+            return val.negated();
+          }
+          if (isComplex(val)) {
+            return simplifyComplex({ re: -val.re, im: -val.im });
+          }
           return -val;
         case '!':
           return !val;
@@ -1348,16 +1374,23 @@ function evaluateAST(node, context = {}) {
         const a = isFraction(left) ? left : fraction(left, 1);
         const b = isFraction(right) ? right : fraction(right, 1);
         switch (node.operator) {
-          case '+': return addFrac(a, b);
-          case '-': return subFrac(a, b);
-          case '*': return mulFrac(a, b);
-          case '/': return divFrac(a, b);
+          case '+':
+            return addFrac(a, b);
+          case '-':
+            return subFrac(a, b);
+          case '*':
+            return mulFrac(a, b);
+          case '/':
+            return divFrac(a, b);
           case '^': {
             const p = powFrac(a, right);
-            if (p) {return p;}
+            if (p) {
+              return p;
+            }
             throw nodeError('Fraction power requires non-negative integer exponent');
           }
-          default: throw nodeError(`Operator ${node.operator} not supported for fractions`);
+          default:
+            throw nodeError(`Operator ${node.operator} not supported for fractions`);
         }
       }
 
@@ -1365,18 +1398,30 @@ function evaluateAST(node, context = {}) {
         const a = isBigNumber(left) ? left : bigNumber(left);
         const b = isBigNumber(right) ? right : bigNumber(right);
         switch (node.operator) {
-          case '+': return a.plus(b);
-          case '-': return a.minus(b);
-          case '*': return a.times(b);
-          case '/': return a.div(b);
-          case '%': return a.mod(b);
-          case '^': return a.pow(b);
-          case '>': return a.gt(b);
-          case '<': return a.lt(b);
-          case '>=': return a.gte(b);
-          case '<=': return a.lte(b);
-          case '==': return a.eq(b);
-          default: throw nodeError(`Operator ${node.operator} not supported for BigNumber`);
+          case '+':
+            return a.plus(b);
+          case '-':
+            return a.minus(b);
+          case '*':
+            return a.times(b);
+          case '/':
+            return a.div(b);
+          case '%':
+            return a.mod(b);
+          case '^':
+            return a.pow(b);
+          case '>':
+            return a.gt(b);
+          case '<':
+            return a.lt(b);
+          case '>=':
+            return a.gte(b);
+          case '<=':
+            return a.lte(b);
+          case '==':
+            return a.eq(b);
+          default:
+            throw nodeError(`Operator ${node.operator} not supported for BigNumber`);
         }
       }
 
@@ -3635,39 +3680,55 @@ const internalFunctions = {
 
   // ---- Reciprocal trig ----
   acot: (/** @type {number} */ x) => {
-    if (x === 0) {return Math.PI / 2;}
+    if (x === 0) {
+      return Math.PI / 2;
+    }
     return Math.atan(1 / x);
   },
 
   asec: (/** @type {number} */ x) => {
-    if (x < 1 && x > -1) {throw new Error('asec() domain error');}
+    if (x < 1 && x > -1) {
+      throw new Error('asec() domain error');
+    }
     return Math.acos(1 / x);
   },
 
   acsc: (/** @type {number} */ x) => {
-    if (x < 1 && x > -1) {throw new Error('acsc() domain error');}
+    if (x < 1 && x > -1) {
+      throw new Error('acsc() domain error');
+    }
     return Math.asin(1 / x);
   },
 
   acoth: (/** @type {number} */ x) => {
-    if (Math.abs(x) <= 1) {throw new Error('acoth() domain error');}
+    if (Math.abs(x) <= 1) {
+      throw new Error('acoth() domain error');
+    }
     return Math.atanh(1 / x);
   },
 
   asech: (/** @type {number} */ x) => {
-    if (x <= 0 || x > 1) {throw new Error('asech() domain error');}
+    if (x <= 0 || x > 1) {
+      throw new Error('asech() domain error');
+    }
     return Math.acosh(1 / x);
   },
 
   acsch: (/** @type {number} */ x) => {
-    if (x === 0) {throw new Error('acsch() domain error');}
+    if (x === 0) {
+      throw new Error('acsch() domain error');
+    }
     return Math.asinh(1 / x);
   },
 
   // ---- Stats ----
   quantile: (/** @type {any[]} */ arr, /** @type {number} */ p) => {
-    if (!Array.isArray(arr) || arr.length === 0) {throw new Error('quantile() expects a non-empty array');}
-    if (p < 0 || p > 1) {throw new Error('quantile() p must be between 0 and 1');}
+    if (!Array.isArray(arr) || arr.length === 0) {
+      throw new Error('quantile() expects a non-empty array');
+    }
+    if (p < 0 || p > 1) {
+      throw new Error('quantile() p must be between 0 and 1');
+    }
     const sorted = [...arr].sort((a, b) => a - b);
     const idx = p * (sorted.length - 1);
     const lo = Math.floor(idx);
@@ -3676,7 +3737,9 @@ const internalFunctions = {
   },
 
   percentile: (/** @type {any[]} */ arr, /** @type {number} */ p) => {
-    if (p < 0 || p > 100) {throw new Error('percentile() p must be between 0 and 100');}
+    if (p < 0 || p > 100) {
+      throw new Error('percentile() p must be between 0 and 100');
+    }
     return internalFunctions.quantile(arr, p / 100);
   },
 
@@ -3693,26 +3756,39 @@ const internalFunctions = {
     const cov = internalFunctions.covariance(x, y);
     const sx = Math.sqrt(internalFunctions.covariance(x, x));
     const sy = Math.sqrt(internalFunctions.covariance(y, y));
-    if (sx === 0 || sy === 0) {throw new Error('corr() zero variance');}
+    if (sx === 0 || sy === 0) {
+      throw new Error('corr() zero variance');
+    }
     return cov / (sx * sy);
   },
 
   randomInt: (/** @type {number} */ min, /** @type {number} */ max) => {
-    if (!Number.isInteger(min) || !Number.isInteger(max)) {throw new Error('randomInt() expects integers');}
+    if (!Number.isInteger(min) || !Number.isInteger(max)) {
+      throw new Error('randomInt() expects integers');
+    }
     return Math.floor(Math.random() * (max - min + 1)) + min;
   },
 
   randomNormal: (/** @type {number} */ mean, /** @type {number} */ std) => {
-    if (std <= 0) {throw new Error('randomNormal() std must be > 0');}
-    let u = 0; let v = 0;
-    while (u === 0) {u = Math.random();}
-    while (v === 0) {v = Math.random();}
+    if (std <= 0) {
+      throw new Error('randomNormal() std must be > 0');
+    }
+    let u = 0;
+    let v = 0;
+    while (u === 0) {
+      u = Math.random();
+    }
+    while (v === 0) {
+      v = Math.random();
+    }
     return mean + std * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
   },
 
   // ---- Special functions ----
   erf: (/** @type {number} */ x) => {
-    if (x === 0) {return 0;}
+    if (x === 0) {
+      return 0;
+    }
     // Abramowitz & Stegun approximation (max error 1.5e-7)
     const t = 1 / (1 + 0.3275911 * Math.abs(x));
     const a = [0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429];
@@ -3726,22 +3802,32 @@ const internalFunctions = {
   },
 
   lgamma: (/** @type {number} */ x) => {
-    if (x <= 0) {throw new Error('lgamma() domain error (x > 0 required)');}
+    if (x <= 0) {
+      throw new Error('lgamma() domain error (x > 0 required)');
+    }
     // Stirling's approximation
     if (x < 12) {
       // Use recurrence: lgamma(x) = lgamma(x+1) - ln(x)
-      let v = x; let r = 0;
-      while (v < 12) { r -= Math.log(v); v += 1; }
+      let v = x;
+      let r = 0;
+      while (v < 12) {
+        r -= Math.log(v);
+        v += 1;
+      }
       return r + internalFunctions.lgamma(v);
     }
     const inv = 1 / x;
-    const s = (1 / 12 - inv * inv / 360 + inv * inv * inv * inv / 1260) * inv;
+    const s = (1 / 12 - (inv * inv) / 360 + (inv * inv * inv * inv) / 1260) * inv;
     return (x - 0.5) * Math.log(x) - x + 0.9189385332046727 + s;
   },
 
   beta: (/** @type {number} */ a, /** @type {number} */ b) => {
-    if (a <= 0 || b <= 0) {throw new Error('beta() domain error');}
-    return Math.exp(internalFunctions.lgamma(a) + internalFunctions.lgamma(b) - internalFunctions.lgamma(a + b));
+    if (a <= 0 || b <= 0) {
+      throw new Error('beta() domain error');
+    }
+    return Math.exp(
+      internalFunctions.lgamma(a) + internalFunctions.lgamma(b) - internalFunctions.lgamma(a + b)
+    );
   },
 
   // ---- Numeric helpers ----
@@ -3750,12 +3836,16 @@ const internalFunctions = {
   cbrt: (/** @type {number} */ x) => Math.cbrt(x),
 
   log2: (/** @type {number} */ x) => {
-    if (x <= 0) {throw new Error('log2() domain error');}
+    if (x <= 0) {
+      throw new Error('log2() domain error');
+    }
     return Math.log2(x);
   },
 
   log1p: (/** @type {number} */ x) => {
-    if (x <= -1) {throw new Error('log1p() domain error');}
+    if (x <= -1) {
+      throw new Error('log1p() domain error');
+    }
     return Math.log1p(x);
   },
 
@@ -3763,22 +3853,30 @@ const internalFunctions = {
 
   // ---- Bitwise ----
   bitAnd: (/** @type {number} */ a, /** @type {number} */ b) => {
-    if (!Number.isInteger(a) || !Number.isInteger(b)) {throw new Error('bitAnd() expects integers');}
+    if (!Number.isInteger(a) || !Number.isInteger(b)) {
+      throw new Error('bitAnd() expects integers');
+    }
     return a & b;
   },
 
   bitOr: (/** @type {number} */ a, /** @type {number} */ b) => {
-    if (!Number.isInteger(a) || !Number.isInteger(b)) {throw new Error('bitOr() expects integers');}
+    if (!Number.isInteger(a) || !Number.isInteger(b)) {
+      throw new Error('bitOr() expects integers');
+    }
     return a | b;
   },
 
   bitXor: (/** @type {number} */ a, /** @type {number} */ b) => {
-    if (!Number.isInteger(a) || !Number.isInteger(b)) {throw new Error('bitXor() expects integers');}
+    if (!Number.isInteger(a) || !Number.isInteger(b)) {
+      throw new Error('bitXor() expects integers');
+    }
     return a ^ b;
   },
 
   bitNot: (/** @type {number} */ a) => {
-    if (!Number.isInteger(a)) {throw new Error('bitNot() expects an integer');}
+    if (!Number.isInteger(a)) {
+      throw new Error('bitNot() expects an integer');
+    }
     return ~a;
   },
 };
@@ -3800,7 +3898,9 @@ function buildAST(tokens) {
 
   const nodeAt = (/** @type {any} */ node) => {
     const pos = lastPos();
-    if (pos >= 0) { node.pos = pos; }
+    if (pos >= 0) {
+      node.pos = pos;
+    }
     return node;
   };
 
@@ -4367,7 +4467,9 @@ function buildAST(tokens) {
   if (current < tokens.length) {
     const t = peek();
     const pos = t && t.pos !== undefined ? ` at position ${t.pos}` : '';
-    throw new Error(`Unexpected token "${t ? JSON.stringify(t.value || t.name || t.type) : '?'}"${pos}`);
+    throw new Error(
+      `Unexpected token "${t ? JSON.stringify(t.value || t.name || t.type) : '?'}"${pos}`
+    );
   }
 
   return ast;

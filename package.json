@@ -1,6 +1,6 @@
 {
   "name": "exprify",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A powerful math expression parser and evaluator with runtime data-type checking",
   "type": "module",
   "main": "dist/exprify.cjs.cjs",
@@ -29,10 +29,10 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
+    "clean": "node tools/clean.js",
     "build": "npm run clean && rollup -c",
-    "test": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:coverage": "node --no-warnings --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test": "node tools/test.js",
+    "test:coverage": "node tools/test.js --coverage",
     "size": "size-limit",
     "lint": "eslint src/ test/",
     "lint:fix": "eslint --fix src/ test/",

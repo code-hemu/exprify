@@ -8,6 +8,7 @@ const cliPath = resolve(__dirname, '../bin/cli.mjs');
 function run(args = []) {
   return execFileSync(process.execPath, [cliPath, ...args], {
     encoding: 'utf-8',
+    stdio: ['pipe', 'pipe', 'pipe'],
   });
 }
 

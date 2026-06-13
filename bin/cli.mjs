@@ -17,7 +17,7 @@ try {
 
 let Exprify;
 try {
-  const mod = await import('../src/core/Exprify.js');
+  const mod = await import('../src/core/exprify.js');
   Exprify = mod.default || mod.Exprify;
 } catch {
   stderr.write('Error: Could not load Exprify module\n');
@@ -93,7 +93,9 @@ if (args.length === 0) {
   } else {
     let input = '';
     stdin.setEncoding('utf-8');
-    stdin.on('data', (chunk) => { input += chunk; });
+    stdin.on('data', (chunk) => {
+      input += chunk;
+    });
     stdin.on('end', () => {
       const exprStr = input.trim();
       if (exprStr) evaluateAndPrint(exprStr);
@@ -141,14 +143,48 @@ function startREPL() {
     prompt: COLORS.cyan + '» ' + COLORS.reset,
     completer: (line) => {
       const completions = [
-        'help', '.help', '.exit',
-        'pi', 'e', 'i', 'PHI', 'TAU', 'INFINITY', 'NaN',
-        'sin', 'cos', 'tan', 'sqrt', 'abs', 'log', 'exp',
-        'map', 'filter', 'sum', 'prod', 'mean', 'max', 'min',
-        'if', 'parse', 'leafCount', 'random',
-        'simplify', 'expand', 'factor', 'solve', 'derivative',
-        'integral', 'sigma', 'limit', 'substitute',
-        'det', 'transpose', 'inverse', 'trace', 'rank',
+        'help',
+        '.help',
+        '.exit',
+        'pi',
+        'e',
+        'i',
+        'PHI',
+        'TAU',
+        'INFINITY',
+        'NaN',
+        'sin',
+        'cos',
+        'tan',
+        'sqrt',
+        'abs',
+        'log',
+        'exp',
+        'map',
+        'filter',
+        'sum',
+        'prod',
+        'mean',
+        'max',
+        'min',
+        'if',
+        'parse',
+        'leafCount',
+        'random',
+        'simplify',
+        'expand',
+        'factor',
+        'solve',
+        'derivative',
+        'integral',
+        'sigma',
+        'limit',
+        'substitute',
+        'det',
+        'transpose',
+        'inverse',
+        'trace',
+        'rank',
       ];
       const hits = completions.filter((c) => c.startsWith(line));
       return [hits.length ? hits : completions, line];

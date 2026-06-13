@@ -15,7 +15,9 @@ export function buildAST(tokens) {
 
   const nodeAt = (/** @type {any} */ node) => {
     const pos = lastPos();
-    if (pos >= 0) { node.pos = pos; }
+    if (pos >= 0) {
+      node.pos = pos;
+    }
     return node;
   };
 
@@ -582,7 +584,9 @@ export function buildAST(tokens) {
   if (current < tokens.length) {
     const t = peek();
     const pos = t && t.pos !== undefined ? ` at position ${t.pos}` : '';
-    throw new Error(`Unexpected token "${t ? JSON.stringify(t.value || t.name || t.type) : '?'}"${pos}`);
+    throw new Error(
+      `Unexpected token "${t ? JSON.stringify(t.value || t.name || t.type) : '?'}"${pos}`
+    );
   }
 
   return ast;

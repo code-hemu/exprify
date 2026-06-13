@@ -24,7 +24,7 @@ export class ExprDecimal {
 
     if (typeof value === 'number') {
       if (!Number.isFinite(value)) {
-        throw new Error(`Cannot create ExprDecimal from ${  value}`);
+        throw new Error(`Cannot create ExprDecimal from ${value}`);
       }
       value = String(value);
     }
@@ -101,7 +101,9 @@ export class ExprDecimal {
     const d = new ExprDecimal(0);
     d.#sign = sign;
     d.#int = int < 0n ? -int : int;
-    if (int < 0n) {d.#sign = -sign;}
+    if (int < 0n) {
+      d.#sign = -sign;
+    }
     d.#dp = dp;
     d.#normalize();
     return d;
@@ -145,7 +147,11 @@ export class ExprDecimal {
   mod(other) {
     other = other instanceof ExprDecimal ? other : new ExprDecimal(other);
     const quotient = this.div(other);
-    const truncated = quotient.#fromParts(quotient.#sign, quotient.#int - (quotient.#int % 10n ** BigInt(quotient.#dp > 0 ? 1 : 0)), 0);
+    const truncated = quotient.#fromParts(
+      quotient.#sign,
+      quotient.#int - (quotient.#int % 10n ** BigInt(quotient.#dp > 0 ? 1 : 0)),
+      0
+    );
     return this.minus(truncated.times(other));
   }
 
@@ -168,7 +174,9 @@ export class ExprDecimal {
   negated() {
     const d = new ExprDecimal(this);
     d.#sign = -d.#sign;
-    if (d.#int === 0n) {d.#sign = 1;}
+    if (d.#int === 0n) {
+      d.#sign = 1;
+    }
     return d;
   }
 
@@ -206,19 +214,25 @@ export class ExprDecimal {
       const coeffInt = intStr[0];
       const coeffFrac = intStr.slice(1).replace(/0+$/, '');
       let r = coeffInt;
-      if (coeffFrac) {r += `.${  coeffFrac}`;}
+      if (coeffFrac) {
+        r += `.${coeffFrac}`;
+      }
       r += 'e';
       r += exponent >= 0 ? '+' : '';
       r += exponent;
-      return this.#sign === -1 ? `-${  r}` : r;
+      return this.#sign === -1 ? `-${r}` : r;
     };
 
     if (edp === 0) {
-      if (s.length > 15) {return toScientific(s, s.length - 1);}
-      return this.#sign === -1 ? `-${  s}` : s;
+      if (s.length > 15) {
+        return toScientific(s, s.length - 1);
+      }
+      return this.#sign === -1 ? `-${s}` : s;
     }
 
-    while (s.length <= edp) {s = `0${  s}`;}
+    while (s.length <= edp) {
+      s = `0${s}`;
+    }
     const dotPos = s.length - edp;
     const intPartRaw = s.slice(0, dotPos);
     const intTrimmed = intPartRaw.replace(/^0+/, '') || '0';
@@ -233,7 +247,7 @@ export class ExprDecimal {
     const intPart = intPartRaw || '0';
     const fracPart = fracRaw.replace(/0+$/, '');
     if (fracPart === '') {
-      return this.#sign === -1 ? `-${  intPart}` : intPart;
+      return this.#sign === -1 ? `-${intPart}` : intPart;
     }
     return `${this.#sign === -1 ? '-' : ''}${intPart}.${fracPart}`;
   }

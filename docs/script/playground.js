@@ -86,14 +86,15 @@ function updateVars() {
   varsBody.innerHTML = '';
   const allVars = state.variables || {};
   const keys = Object.keys(allVars).sort();
-  keys.forEach(k => {
+  keys.forEach((k) => {
     const tr = document.createElement('tr');
     const td1 = document.createElement('td');
     td1.textContent = k;
     const td2 = document.createElement('td');
-    td2.textContent = typeof allVars[k] === 'number' && !Number.isInteger(allVars[k]) ?
-      allVars[k].toFixed(6) :
-      String(allVars[k]);
+    td2.textContent =
+      typeof allVars[k] === 'number' && !Number.isInteger(allVars[k])
+        ? allVars[k].toFixed(6)
+        : String(allVars[k]);
     tr.appendChild(td1);
     tr.appendChild(td2);
     varsBody.appendChild(tr);
@@ -109,6 +110,6 @@ function esc(s) {
 renderExamples();
 updateVars();
 
-input.addEventListener('keydown', e => {
+input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') run();
 });

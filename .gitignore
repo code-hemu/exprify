@@ -8,7 +8,7 @@ coverage/
 .husky/
 
 # Build output
-dist
+dist/
 
 # Temporary/utility scripts
 scripts/

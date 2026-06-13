@@ -1,4 +1,3 @@
-// @ts-check
 export const globalUnits = {
   length: {
     m: { value: 1, unit: 'meter', symbol: 'm' },

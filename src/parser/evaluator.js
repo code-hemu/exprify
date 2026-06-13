@@ -1,5 +1,13 @@
 import { unwrapDenseMatrix, wrapDenseMatrix, isDenseMatrixWrapper } from '../utils/matrix.js';
-import { isFraction, fraction as createFrac, addFrac, subFrac, mulFrac, divFrac, powFrac } from '../math/fraction.js';
+import {
+  isFraction,
+  fraction as createFrac,
+  addFrac,
+  subFrac,
+  mulFrac,
+  divFrac,
+  powFrac,
+} from '../math/fraction.js';
 import { isBigNumber, bigNumber as createBN } from '../math/bignumber.js';
 
 /** @param {any } node*/
@@ -386,30 +394,30 @@ export function evaluateAST(node, context = {}) {
           case '%':
             value = current % right;
             break;
-      default:
-        throw nodeError(`Unknown compound operator ${node.operator}`);
+          default:
+            throw nodeError(`Unknown compound operator ${node.operator}`);
+        }
+      } else {
+        value = evaluateAST(node.right, context);
+      }
+
+      if (node.left.type === 'Identifier') {
+        vars.set(node.left.name, value);
+        if (node.right.type === 'ArrayExpression') {
+          return wrapDenseMatrix(unwrapDenseMatrix(value));
+        }
+        return value;
+      }
+
+      if (node.left.type === 'IndexExpression' && node.left.object.type === 'Identifier') {
+        const currentValue = vars.get(node.left.object.name);
+        const assigned = assignMatrixIndex(currentValue, node.left.selectors, value);
+        vars.set(node.left.object.name, assigned.updatedMatrix);
+        return assigned.selectionResult;
+      }
+
+      throw nodeError('Invalid assignment target');
     }
-  } else {
-    value = evaluateAST(node.right, context);
-  }
-
-  if (node.left.type === 'Identifier') {
-    vars.set(node.left.name, value);
-    if (node.right.type === 'ArrayExpression') {
-      return wrapDenseMatrix(unwrapDenseMatrix(value));
-    }
-    return value;
-  }
-
-  if (node.left.type === 'IndexExpression' && node.left.object.type === 'Identifier') {
-    const currentValue = vars.get(node.left.object.name);
-    const assigned = assignMatrixIndex(currentValue, node.left.selectors, value);
-    vars.set(node.left.object.name, assigned.updatedMatrix);
-    return assigned.selectionResult;
-  }
-
-  throw nodeError('Invalid assignment target');
-}
 
     // User-defined function via f(a,b)=expr: closure evaluates body in a new scope with params bound
     case 'FunctionAssignmentExpression': {
@@ -432,8 +440,12 @@ export function evaluateAST(node, context = {}) {
 
       switch (node.operator) {
         case '-':
-          if (isBigNumber(val)) {return val.negated();}
-          if (isComplex(val)) {return simplifyComplex({ re: -val.re, im: -val.im });}
+          if (isBigNumber(val)) {
+            return val.negated();
+          }
+          if (isComplex(val)) {
+            return simplifyComplex({ re: -val.re, im: -val.im });
+          }
           return -val;
         case '!':
           return !val;
@@ -479,16 +491,23 @@ export function evaluateAST(node, context = {}) {
         const a = isFraction(left) ? left : createFrac(left, 1);
         const b = isFraction(right) ? right : createFrac(right, 1);
         switch (node.operator) {
-          case '+': return addFrac(a, b);
-          case '-': return subFrac(a, b);
-          case '*': return mulFrac(a, b);
-          case '/': return divFrac(a, b);
+          case '+':
+            return addFrac(a, b);
+          case '-':
+            return subFrac(a, b);
+          case '*':
+            return mulFrac(a, b);
+          case '/':
+            return divFrac(a, b);
           case '^': {
             const p = powFrac(a, right);
-            if (p) {return p;}
+            if (p) {
+              return p;
+            }
             throw nodeError('Fraction power requires non-negative integer exponent');
           }
-          default: throw nodeError(`Operator ${node.operator} not supported for fractions`);
+          default:
+            throw nodeError(`Operator ${node.operator} not supported for fractions`);
         }
       }
 
@@ -496,18 +515,30 @@ export function evaluateAST(node, context = {}) {
         const a = isBigNumber(left) ? left : createBN(left);
         const b = isBigNumber(right) ? right : createBN(right);
         switch (node.operator) {
-          case '+': return a.plus(b);
-          case '-': return a.minus(b);
-          case '*': return a.times(b);
-          case '/': return a.div(b);
-          case '%': return a.mod(b);
-          case '^': return a.pow(b);
-          case '>': return a.gt(b);
-          case '<': return a.lt(b);
-          case '>=': return a.gte(b);
-          case '<=': return a.lte(b);
-          case '==': return a.eq(b);
-          default: throw nodeError(`Operator ${node.operator} not supported for BigNumber`);
+          case '+':
+            return a.plus(b);
+          case '-':
+            return a.minus(b);
+          case '*':
+            return a.times(b);
+          case '/':
+            return a.div(b);
+          case '%':
+            return a.mod(b);
+          case '^':
+            return a.pow(b);
+          case '>':
+            return a.gt(b);
+          case '<':
+            return a.lt(b);
+          case '>=':
+            return a.gte(b);
+          case '<=':
+            return a.lte(b);
+          case '==':
+            return a.eq(b);
+          default:
+            throw nodeError(`Operator ${node.operator} not supported for BigNumber`);
         }
       }
 

@@ -3,6 +3,4 @@ node_modules/
 coverage/
 package-lock.json
 *.md
-
-# Husky generated scripts
-.husky/_/
+.husky
