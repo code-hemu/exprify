@@ -568,7 +568,7 @@ class exprify {
       }
       const variable = variableMatch[0];
       const addStar = (/** @type {string} */ s) =>
-        s.replace(/"/g, '\\"').replace(/(\d)([a-zA-Z_])/g, '$1*$2');
+        s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/(\d)([a-zA-Z_])/g, '$1*$2');
       const cleanedExpr = addStar(cleaned);
       const maxPower = 6;
       const vals = [];
