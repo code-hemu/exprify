@@ -18,15 +18,15 @@
 
 | Capability | Example | Docs |
 |---|---|---|
-| **Arithmetic & Variables** | `expr.evaluate("5 + 7 * 2")` `19` | [syntax](docs/expressions/syntax.md) |
-| **Unit conversion** | `expr.evaluate("2 inch to cm")` `"5.08 cm"` | [units](docs/datatypes/units.md) |
-| **Matrix operations** | `expr.evaluate("det([-1,2;3,1])")`-`-7` | [matrices](docs/datatypes/matrices.md) |
-| **Complex numbers** | `expr.evaluate("9/3 + 2i")`-`"3 + 2i"` | [complex](docs/datatypes/complex_numbers.md) |
-| **Symbolic math** | `expr.evaluate('expand("(x+1)^2")')`-`"x^2 + 2x + 1"` | [algebra](docs/expressions/algebra.md) |
-| **Arbitrary precision** | `expr.evaluate('bignumber("0.1") + bignumber("0.2")')`-`"0.3"` | [bignumbers](docs/datatypes/bignumbers.md) |
-| **Exact fractions** | `expr.evaluate("fraction(1,3) + fraction(1,6)")`-`"1/2"` | [fractions](docs/datatypes/fractions.md) |
-| **Calculus & statistics** | `expr.evaluate('integral("x^2", 0, 1)')`-`~0.333` | [functions](docs/functions.md) |
-| **Lambda expressions** | `expr.evaluate('map([1,2,3], x -> x^2)')`-`[1,4,9]` | [customization](docs/expressions/customization.md) |
+| **Arithmetic & Variables** | `expr.evaluate("5 + 7 * 2")`->`19` | [syntax](docs/expressions/syntax.md) |
+| **Unit conversion** | `expr.evaluate("2 inch to cm")`->`"5.08 cm"` | [units](docs/datatypes/units.md) |
+| **Matrix operations** | `expr.evaluate("det([-1,2;3,1])")`->`-7` | [matrices](docs/datatypes/matrices.md) |
+| **Complex numbers** | `expr.evaluate("9/3 + 2i")`->`"3 + 2i"` | [complex](docs/datatypes/complex_numbers.md) |
+| **Symbolic math** | `expr.evaluate('expand("(x+1)^2")')`->`"x^2 + 2x + 1"` | [algebra](docs/expressions/algebra.md) |
+| **Arbitrary precision** | `expr.evaluate('bignumber("0.1") + bignumber("0.2")')`->`"0.3"` | [bignumbers](docs/datatypes/bignumbers.md) |
+| **Exact fractions** | `expr.evaluate("fraction(1,3) + fraction(1,6)")`->`"1/2"` | [fractions](docs/datatypes/fractions.md) |
+| **Calculus & statistics** | `expr.evaluate('integral("x^2", 0, 1)')`->`~0.333` | [functions](docs/functions.md) |
+| **Lambda expressions** | `expr.evaluate('map([1,2,3], x -> x^2)')`->`[1,4,9]` | [customization](docs/expressions/customization.md) |
 | **Expression chaining** | `c.evaluate("sqrt(x)").evaluate("ans * 2").done()` | [chaining](docs/core/chaining.md) |
 | **State serialization** | `expr.exportState()` / `expr.importState(state)` | [serialization](docs/core/serialization.md) |
 | **Degree-mode trig** | `expr.evaluate("sind(90)")`-`1` | [functions](docs/expressions/functions.md) |
