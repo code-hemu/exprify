@@ -69,34 +69,39 @@ expr.evaluate("5 + 7 * 2");        // 19
 </script>
 ```
 
-## API
+## API Reference
 
 ### `new Exprify()`
 
-Creates a new evaluator instance with isolated state for variables, functions, units, and a compiled-expression cache.
+Creates a new evaluator instance with fully isolated state. Each instance maintains its own independent registry of variables, custom functions, unit definitions, and a compiled-expression cache - so multiple instances never interfere with each other.
+
+```js
+const expr = new Exprify();
+```
 
 ### `expr.evaluate(expression, scope?)`
 
-Parses and evaluates an expression string. An optional `scope` object overrides variables for that single call only.
+Parses and evaluates an expression string, returning the computed result. An optional `scope` object lets you pass temporary variable values that apply only to that single call - they do not modify the instance's stored state.
 
 ```js
 expr.evaluate("10 + 5 * 2");               // 20
 
 expr.setVariable("x", 100);
-expr.evaluate("x + 1", { x: 5 });          // 6
+expr.evaluate("x + 1", { x: 5 });          // 6  (x = 100 is unchanged)
 ```
 
 ### `expr.parse(expression)`
 
-Returns `{ tokens, ast }` - the raw token list and abstract syntax tree.
+Parses an expression without evaluating it. Returns a `{ tokens, ast }` object containing the raw token list and the abstract syntax tree - useful for debugging, introspection, or building custom tooling on top of the parser.
 
 ```js
 const { tokens, ast } = expr.parse("2 inch to cm");
+// tokens: [...], ast: { type: "UnitConversion", ... }
 ```
 
 ### `expr.compile(expression)`
 
-Compiles an expression once and returns a reusable function - ideal for hot paths.
+Compiles an expression once and returns a reusable callable function. The compiled form skips parsing on every subsequent invocation, making this the right choice for hot paths or any expression evaluated repeatedly with different inputs.
 
 ```js
 const area = expr.compile("width * height");
@@ -106,60 +111,73 @@ area({ width: 3, height: 9 });             // 27
 
 ### `expr.setVariable(name, value)` / `expr.getVariable(name)`
 
-Stores and retrieves named values that persist across evaluations.
+Stores a named value that persists across all future evaluations on this instance. `getVariable` retrieves a previously stored value by name.
 
 ```js
 expr.setVariable("x", 10);
 expr.setVariable("y", 5);
 expr.evaluate("x + y * 2");                // 20
+
+expr.getVariable("x");                     // 10
 ```
 
 ### `expr.addFunction(name, fn)`
 
-Registers a custom JavaScript function, making it callable inside expressions.
+Registers a plain JavaScript function under a given name, making it available to call inside any expression evaluated on this instance. The function receives its arguments as individual parameters, exactly as written in the expression.
 
 ```js
 expr.addFunction("double", (n) => n * 2);
 expr.evaluate("double(5) + 3");            // 13
+
+expr.addFunction("clamp", (val, lo, hi) => Math.min(Math.max(val, lo), hi));
+expr.evaluate("clamp(150, 0, 100)");       // 100
 ```
 
 ### `expr.chain()`
 
-Returns a fluent `Chain` object. Each step stores its result as `ans` for the next expression.
+Returns a fluent `Chain` object for building multi-step calculations. Each call to `.evaluate()` on the chain stores its result in the special variable `ans`, which the next expression can reference directly. Call `.done()` at the end to extract the final value.
 
 ```js
 const c = expr.chain();
 c.setVariable("x", 25);
-c.evaluate("sqrt(x) + 3");                 // ans = 8
-c.evaluate("ans * 2");                     // ans = 16
+c.evaluate("sqrt(x) + 3");                 // computes 8, stored as ans
+c.evaluate("ans * 2");                     // computes 16, stored as ans
 c.done();                                  // 16
 ```
 
 ### `expr.exportState()` / `expr.importState(state)`
 
-Serializes and restores the full engine state - variables, functions, and units.
+Serializes the complete engine state - all variables, registered functions, and unit definitions - into a plain object that can be stored, transmitted, or restored later. `importState` loads a previously exported snapshot into a fresh instance, fully reconstructing that environment.
 
 ```js
 const state = expr.exportState();
-// { variables: {...}, functions: [...], units: {...} }
+// { 
+//    variables: { x: 10, y: 5 }, 
+//    functions: ["double", "clamp"], 
+//     units: {...} 
+//  }
 
 const expr2 = new Exprify();
 expr2.importState(state);
+expr2.evaluate("x + y");                   // 15
 ```
 
 ### Inline Function Definitions
 
-Functions can be defined directly inside expressions and reused immediately.
+Functions can be defined directly inside an expression using the `name(params) = body` syntax. Once defined, they behave exactly like functions registered via `addFunction` and remain available for the lifetime of the instance.
 
 ```js
 expr.evaluate("hyp(a, b) = sqrt(a^2 + b^2)");
 expr.evaluate("hyp(3, 4)");                // 5
+expr.evaluate("hyp(5, 12)");              // 13
 ```
+
+This is particularly convenient for one-off helpers that do not warrant a full `addFunction` call, or for expressions that define and immediately use a function in a single evaluation step.
 
 ## Built-in Functions (Selected)
 
 | Function | Description | Example | Result |
-|---|---|---|---|
+|||||
 | `abs` | Absolute value | `abs(-5)` | `5` |
 | `round` | Round to nearest integer | `round(3.7)` | `4` |
 | `floor` | Round down | `floor(3.7)` | `3` |
@@ -170,7 +188,7 @@ expr.evaluate("hyp(3, 4)");                // 5
 ## Return Types
 
 | Type | Example expression | Result |
-|---|---|---|
+||||
 | Number / BigInt / Boolean | `2 + 2`, `true && false` | `4`, `false` |
 | String | `"hello" + " world"` | `"hello world"` |
 | Unit string | `2 inch to cm` | `"5.08 cm"` |
