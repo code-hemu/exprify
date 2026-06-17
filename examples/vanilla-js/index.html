@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exprify Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #59598b;
+      font-family: sans-serif;
+    }
+
+    .calculator {
+      background: #2d3c63;
+      border-radius: 16px;
+      padding: 20px;
+      width: min(100% - 32px, 400px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .display{
+      width:100%;
+      height:70px;
+      border:none;
+      border-radius:10px;
+      background:#0f3460;
+      color:white;
+      text-align:right;
+      padding:0 15px;
+      font-size:2rem;
+      margin-bottom:15px;
+    }
+
+    .buttons,
+    .sci-panel  {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+
+    button {
+      padding: 16px 8px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #1a1a40;
+      color: #e8e8e8;
+      transition: background 0.15s, transform 0.1s;
+      font-family: inherit;
+    }
+
+    button:hover {
+      background: #2a2a5e;
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    button[data-action="evaluate"] {
+      background: #e94560;
+      color: #fff;
+    }
+
+    button[data-action="evaluate"]:hover {
+      background: #ff6b81;
+    }
+
+    button[data-action="clear"] {
+      background: #533483;
+    }
+  </style>
+  <script src="https://unpkg.com/exprify"></script>
+</head>
+<body>
+  <!-- calculator will go here -->
+  <div class="calculator">
+      <input type="text" id="display" class="display" value="0" readonly />
+      <div class="sci-panel" id="sciPanel"></div>
+      <div class="buttons" id="buttons">
+        <!-- populated by JavaScript -->
+      </div>
+  </div>
+  <script>
+    const expr = new Exprify();
+
+    const display = document.getElementById("display");
+    const container = document.getElementById("buttons");
+    const sciContainer = document.getElementById("sciPanel");
+
+    const buttons = [
+      // row 1
+      { label: "C", action: "clear" },
+      { label: "±", action: "negate" },
+      { label: "%", action: "append", value: "%" },
+      { label: "÷", action: "append", value: "/" },
+      // row 2
+      { label: "7", action: "append", value: "7" },
+      { label: "8", action: "append", value: "8" },
+      { label: "9", action: "append", value: "9" },
+      { label: "×", action: "append", value: "*" },
+      // row 3
+      { label: "4", action: "append", value: "4" },
+      { label: "5", action: "append", value: "5" },
+      { label: "6", action: "append", value: "6" },
+      { label: "−", action: "append", value: "-" },
+      // row 4
+      { label: "1", action: "append", value: "1" },
+      { label: "2", action: "append", value: "2" },
+      { label: "3", action: "append", value: "3" },
+      { label: "+", action: "append", value: "+" },
+      // row 5
+      { label: "0", action: "append", value: "0", span: 2 },
+      { label: ".", action: "append", value: "." },
+      { label: "=", action: "evaluate" },
+    ];
+
+    const scientificButtons = [
+      { label: "sin", action: "append", value: "sind(" },
+      { label: "cos", action: "append", value: "cosd(" },
+      { label: "tan", action: "append", value: "tand(" },
+      { label: "log", action: "append", value: "log(" },
+      { label: "ln", action: "append", value: "ln(" },
+      { label: "√", action: "append", value: "sqrt(" },
+      { label: "x²", action: "append", value: "^2" },
+      { label: "xⁿ", action: "append", value: "^" },
+      { label: "π", action: "append", value: "pi" },
+      { label: "e", action: "append", value: "e" },
+      { label: "(", action: "append", value: "(" },
+      { label: ")", action: "append", value: ")" },
+    ];
+
+    const memoryButtons = [
+      { label: "MC", action: "memoryClear" },
+      { label: "MR", action: "memoryRecall" },
+      { label: "M+", action: "memoryAdd" },
+      { label: "M−", action: "memorySubtract" },
+    ];
+
+    const allButtons = [...memoryButtons, ...scientificButtons, ...buttons];
+
+
+    buttons.forEach((btn) => {
+      const el = document.createElement("button");
+      el.textContent = btn.label;
+      if (btn.span) el.style.gridColumn = `span ${btn.span}`;
+      el.addEventListener("click", () => handleButton(btn));
+      container.appendChild(el);
+    });
+
+    let expression = "";
+
+    function handleButton(btn) {
+      switch (btn.action) {
+        case "append":
+          expression += btn.value;
+          display.value = expression;
+          break;
+        case "clear":
+          expression = "";
+          display.value = "0";
+          break;
+        case "negate":
+          if (expression.startsWith("-")) {
+            expression = expression.slice(1);
+          } else if (expression) {
+            expression = "-" + expression;
+          }
+          display.value = expression || "0";
+          break;
+        case "evaluate":
+          try {
+            const result = expr.evaluate(expression);
+            display.value = result;
+            expression = String(result);
+          } catch {
+            display.value = "Error";
+            expression = "";
+          }
+          break;
+
+        // ... existing cases ...
+
+        case "memoryClear":
+          expr.setVariable("mem", 0);
+          break;
+        case "memoryRecall":
+          expression += String(expr.getVariable("mem") || 0);
+          display.value = expression;
+          break;
+        case "memoryAdd":
+          try {
+            const val = expr.evaluate(expression);
+            const mem = expr.getVariable("mem") || 0;
+            expr.setVariable("mem", mem + val);
+          } catch {
+            display.value = "Error";
+          }
+          break;
+        case "memorySubtract":
+          try {
+            const val = expr.evaluate(expression);
+            const mem = expr.getVariable("mem") || 0;
+            expr.setVariable("mem", mem - val);
+          } catch {
+            display.value = "Error";
+          }
+          break;
+      }
+    }
+
+
+    scientificButtons.forEach((btn) => {
+      const el = document.createElement("button");
+      el.textContent = btn.label;
+      el.addEventListener("click", () => handleButton(btn));
+      sciContainer.appendChild(el);
+    });
+  </script>
+</body>
+</html>
