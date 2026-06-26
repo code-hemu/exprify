@@ -1,32 +1,25 @@
 [![Exprify Banner](https://raw.githubusercontent.com/code-hemu/Exprify/refs/heads/main/docs/assets/capture.jpg)](https://github.com/code-hemu/Exprify)
-
+<p align="center">
+  <a href="https://www.npmjs.com/package/exprify"><img src="https://img.shields.io/npm/v/exprify" alt="Version"></a>
+  <a href="https://github.com/code-hemu/exprify/blob/master/LICENSE"><img src="https://img.shields.io/github/license/code-hemu/exprify" alt="License"></a>
+  <a href="https://github.com/code-hemu/exprify/issues"><img src="https://img.shields.io/github/issues/code-hemu/exprify" alt="License"></a>
+  <a href="https://www.jsdelivr.com/package/npm/exprify"><img src="https://data.jsdelivr.com/v1/package/npm/exprify/badge?style=rounded" alt="jsDelivr"></a>
+  <a href="https://github.com/code-hemu/exprify/graphs/contributors"><img src="https://img.shields.io/github/contributors/code-hemu/exprify" alt="jsDelivr"></a>
+</p>
 
 **Exprify** (Math **Expr**ession + Simp**lify**) is a fast, lightweight JavaScript expression parser and evaluator. It is designed for math applications, scientific computing, data visualization tools, calculators, and other complex workflows that run in the browser and in Node.js. It supports basic arithmetic, variables, user-defined functions, and built-in operators for comparison, logic, and string manipulation.
-
-
-[![Version](https://img.shields.io/npm/v/exprify)](https://www.npmjs.com/package/exprify)
-[![License](https://img.shields.io/github/license/code-hemu/exprify)](https://github.com/code-hemu/exprify/blob/master/LICENSE)
-[![jsDelivr](https://data.jsdelivr.com/v1/package/npm/exprify/badge?style=rounded)](https://www.jsdelivr.com/package/npm/exprify)
-[![unpkg](https://img.shields.io/badge/CDN-unpkg-blue)](https://unpkg.com/exprify)
-[![Issues](https://img.shields.io/github/issues/code-hemu/exprify)](https://github.com/code-hemu/exprify/issues)
-[![Contributors](https://img.shields.io/github/contributors/code-hemu/exprify)](https://github.com/code-hemu/exprify/graphs/contributors)
-[![Sponsor](https://img.shields.io/github/sponsors/code-hemu)](https://github.com/sponsors/code-hemu)
-[![Open Source](https://badges.frapsoft.com/os/v1/open-source.svg?v=103)](https://github.com/code-hemu/exprify)
-
-## Features
-
-- **Arithmetic & Variables** - `expr.evaluate("5 + 7 * 2")` · [docs](docs/datatypes/numbers.md)
-- **Unit conversion** - `expr.evaluate("2 inch to cm")` · [docs](docs/datatypes/units.md)
-- **Matrix operations** - `expr.evaluate("det([-1,2;3,1])")` · [docs](docs/datatypes/matrices.md)
-- **Complex numbers** - `expr.evaluate("9/3 + 2i")` · [docs](docs/datatypes/complex_numbers.md)
-- **Symbolic math** - `expr.evaluate('expand("(x+1)^2")')` · [docs](docs/expressions/algebra.md)
-- **Arbitrary precision** - `expr.evaluate('bignumber("0.1") + bignumber("0.2")')` · [docs](docs/datatypes/bignumbers.md)
-- **Exact fractions** - `expr.evaluate("fraction(1,3) + fraction(1,6)")` · [docs](docs/datatypes/fractions.md)
-- **Calculus & statistics** - `expr.evaluate('integral("x^2", 0, 1)')` · [docs](docs/reference/functions.md)
-- **Lambda expressions** - `expr.evaluate('map([1,2,3], x -> x^2)')` · [docs](docs/expressions/customization.md)
-- **Expression chaining** - `expr.evaluate("sqrt(x)").evaluate("ans * 2").done()` · [docs](docs/core/chaining.md)
-- **State serialization** - `expr.exportState()` / `expr.importState(state)` · [docs](docs/core/serialization.md)
-- **Degree-mode trig** - `expr.evaluate("sind(90)")` · [docs](docs/reference/functions.md)
+- **[Arithmetic & Variables](docs/datatypes/numbers.md)** - Determine the value of arithmetic expressions using addition, subtraction, multiplication, division, exponents, brackets, variables, and determinants.
+- **[Unit conversion](docs/datatypes/units.md)** - Convert between various compatible units, including length, mass, time, temperature, area, volume, speed, and more.
+- **[Matrix operations](docs/datatypes/matrices.md)** - Create matrices with built-in support for addition, multiplication, transpose, inverse, determinant, eigenvalues, and other common linear algebra operations.
+- **[Complex numbers](docs/datatypes/complex_numbers.md)** - Perform calculations using complex numbers in both Cartesian and polar forms. It supports arithmetic operations, powers, roots, adjoints, values, arguments, and complex-valued functions.
+- **[Symbolic math](docs/expressions/algebra.md)** - Work with algebraic expressions symbolically instead of numerically. Expand, simplify, factor, replace variables, and solve equations symbolically without losing mathematical accuracy.
+- **[Arbitrary precision](docs/datatypes/bignumbers.md)** - Use arbitrary-precision arithmetic for calculations that exceed standard floating-point precision.
+- **[Exact fractions](docs/datatypes/fractions.md)** - Use rational numbers as proper fractions instead of decimal equivalents. Perform math operations with accuracy and convert between fractional.
+- **[Calculus & statistics](docs/reference/functions.md)** - Use a wide collection of mathematical functions, including derivatives, integrations, limits, sums, probability distributions, descriptive statistics, regression, and other statistical operations.
+- **[Lambda expressions](docs/expressions/customization.md)** - Define anonymous functions using the short lambda syntax for functional programming tasks like mapping, filtering, reducing, sorting, and applying custom logic to collections.
+- **[Expression chaining](docs/core/chaining.md)** - Chain multiple evaluations together while automatically preserving intermediate results. Reuse previous answers with `ans`, build multi-step workflows, and finish computations with `.done()`.
+- **[State serialization](docs/core/serialization.md)** - Save the complete evaluation state, including variables, settings, history, and context, then restore it later using serialization APIs for persistence or sharing.
+- **[Degree-mode trig](docs/reference/functions.md)** - Includes dedicated degree-mode functions such as `sind`, `cosd`, `tand`, and their inverse counterparts.
 
 ## Installation
 
@@ -173,30 +166,8 @@ expr.evaluate("hyp(5, 12)");              // 13
 
 This is particularly convenient for one-off helpers that do not warrant a full `addFunction` call, or for expressions that define and immediately use a function in a single evaluation step.
 
-## Built-in Functions (Selected)
-
-| Function | Description | Example | Result |
-|---|---|---|---|
-| `abs` | Absolute value | `abs(-5)` | `5` |
-| `round` | Round to nearest integer | `round(3.7)` | `4` |
-| `floor` | Round down | `floor(3.7)` | `3` |
-| `ceil` | Round up | `ceil(3.2)` | `4` |
-
 > See the [full searchable function reference](docs/reference/functions.md) for all ~130 built-in functions.
-
-## Return Types
-
-| Type | Example expression | Result |
-|---|---|---|
-| Number / BigInt / Boolean | `2 + 2`, `true && false` | `4`, `false` |
-| String | `"hello" + " world"` | `"hello world"` |
-| Unit string | `2 inch to cm` | `"5.08 cm"` |
-| Complex string | `3 + 2i` | `"3 + 2i"` |
-| Matrix JSON | `[1,2;3,4]` | `{"exprify":"DenseMatrix",...}` |
-| Structured JSON | `lup(...)`, `rationalize(..., true)` | JSON object string |
-| Function | `x -> x^2` | Native JS function |
-| Array | `1:5` | `[1,2,3,4,5]` |
-
+> 
 
 ## Manual Build
 
