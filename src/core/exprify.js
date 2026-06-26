@@ -3,7 +3,7 @@ import { evaluateAST } from '../parser/evaluator.js';
 import { createContext } from './context.js';
 import { mathOperations } from '../math/operations.js';
 import { createUnitsStore } from '../utils/store.js';
-import { globalUnits } from '../utils/globalUnits.js';
+import { globalUnits } from '../utils/units.js';
 import { createVarStore } from '../variables/store.js';
 import { createFunctionRegistry } from '../function/registry.js';
 import { internalFunctions } from '../function/internal.js';

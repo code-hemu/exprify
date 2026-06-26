@@ -1,3 +1,5 @@
+import { findDerivedRule } from './units.js';
+
 export function createUnitsStore(initial = {}) {
   let units = { ...initial };
 
@@ -173,6 +175,19 @@ export function createUnitsStore(initial = {}) {
           if (f2 && t2 && f2.type === t2.type) {
             from = f2;
             to = t2;
+          }
+        }
+
+        if (from && to && (op === '*' || op === '/')) {
+          const rule = findDerivedRule(to.type, from.type, op);
+          if (rule) {
+            const leftBase = left.value * to.data.value;
+            const rightBase = right.value * from.data.value;
+            const resultBase = op === '*' ? leftBase * rightBase : leftBase / rightBase;
+            const resultUnit = this.findUnit(rule.resultKey);
+            if (resultUnit) {
+              return { value: resultBase / resultUnit.data.value, unit: rule.resultKey };
+            }
           }
         }
 

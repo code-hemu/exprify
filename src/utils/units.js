@@ -223,3 +223,25 @@ export const globalUnits = {
     mCi: { value: 3.7e7, unit: 'millicurie', symbol: 'mCi' },
   },
 };
+
+export const DERIVED_UNIT_OPS = [
+  { typeA: 'length', typeB: 'length', op: '*', resultType: 'area', resultKey: 'm2' },
+  { typeA: 'area', typeB: 'length', op: '*', resultType: 'volume', resultKey: 'm3' },
+  { typeA: 'voltage', typeB: 'current', op: '*', resultType: 'power', resultKey: 'W' },
+  { typeA: 'power', typeB: 'voltage', op: '/', resultType: 'current', resultKey: 'A' },
+  { typeA: 'voltage', typeB: 'resistance', op: '/', resultType: 'current', resultKey: 'A' },
+  { typeA: 'current', typeB: 'resistance', op: '*', resultType: 'voltage', resultKey: 'V' },
+  { typeA: 'power', typeB: 'current', op: '/', resultType: 'voltage', resultKey: 'V' },
+  { typeA: 'energy', typeB: 'time', op: '/', resultType: 'power', resultKey: 'W' },
+  { typeA: 'power', typeB: 'time', op: '*', resultType: 'energy', resultKey: 'J' },
+  { typeA: 'force', typeB: 'area', op: '/', resultType: 'pressure', resultKey: 'Pa' },
+  { typeA: 'pressure', typeB: 'area', op: '*', resultType: 'force', resultKey: 'N' },
+];
+
+export function findDerivedRule(typeA, typeB, op) {
+  for (const rule of DERIVED_UNIT_OPS) {
+    if (rule.typeA === typeA && rule.typeB === typeB && rule.op === op) return rule;
+    if (rule.typeA === typeB && rule.typeB === typeA && rule.op === op) return rule;
+  }
+  return null;
+}

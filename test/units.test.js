@@ -400,6 +400,68 @@ describe('Units - Individual Feature Tests', () => {
       expr.evaluate('dist = 10 m');
       expect(expr.evaluate('dist to cm')).toBe('1000 cm');
     });
+
+    test('length * length produces area', () => {
+      const result = expr.evaluate('5 m * 3 m');
+      expect(parseFloat(result)).toBeCloseTo(15);
+      expect(result).toMatch(/ m2$/);
+    });
+
+    test('length * length in cm produces m2', () => {
+      const result = expr.evaluate('100 cm * 100 cm');
+      expect(parseFloat(result)).toBeCloseTo(1);
+      expect(result).toMatch(/ m2$/);
+    });
+
+    test('area * length produces volume', () => {
+      const result = expr.evaluate('10 m2 * 5 m');
+      expect(parseFloat(result)).toBeCloseTo(50);
+      expect(result).toMatch(/ m3$/);
+    });
+
+    test('voltage * current produces power', () => {
+      expect(expr.evaluate('220 V * 3 A')).toBe('660 W');
+    });
+
+    test('energy / time produces power', () => {
+      expect(expr.evaluate('6000 J / 60 s')).toBe('100 W');
+    });
+
+    test('power * time produces energy', () => {
+      expect(expr.evaluate('100 W * 60 s')).toBe('6000 J');
+    });
+
+    test('voltage / resistance produces current', () => {
+      expect(expr.evaluate('220 V / 220 ohm')).toBe('1 A');
+    });
+
+    test('current * resistance produces voltage', () => {
+      expect(expr.evaluate('2 A * 100 ohm')).toBe('200 V');
+    });
+
+    test('force / area produces pressure', () => {
+      const result = expr.evaluate('100 N / 20 m2');
+      expect(parseFloat(result)).toBeCloseTo(5);
+      expect(result).toMatch(/ Pa$/);
+    });
+
+    test('pressure * area produces force', () => {
+      const result = expr.evaluate('5 Pa * 20 m2');
+      expect(parseFloat(result)).toBeCloseTo(100);
+      expect(result).toMatch(/ N$/);
+    });
+
+    test('derived unit with to conversion', () => {
+      const result = expr.evaluate('5 m * 3 m to cm2');
+      expect(parseFloat(result)).toBeCloseTo(150000);
+      expect(result).toMatch(/ cm2$/);
+    });
+
+    test('derived unit chained: m * m * m', () => {
+      const result = expr.evaluate('2 m * 3 m * 4 m');
+      expect(parseFloat(result)).toBeCloseTo(24);
+      expect(result).toMatch(/ m3$/);
+    });
   });
 
   // ---------------------------------------------------------------------------
