@@ -7,7 +7,7 @@
   <a href="https://github.com/code-hemu/exprify/graphs/contributors"><img src="https://img.shields.io/github/contributors/code-hemu/exprify" alt="jsDelivr"></a>
 </p>
 
-**Exprify** (Math **Expr**ession + Simp**lify**) is a fast, lightweight JavaScript expression parser and evaluator. It is designed for math applications, scientific computing, data visualization tools, calculators, and other complex workflows that run in the browser and in Node.js. It supports basic arithmetic, variables, user-defined functions, and built-in operators for comparison, logic, and string manipulation.
+**Exprify** (Math **Expr**ession + Simp**lify**) is a JavaScript expression evaluator library. It is designed for math applications, scientific computing, data visualization tools, calculators, and other complex workflows that run in the browser and in Node.js. It supports basic arithmetic, variables, user-defined functions, and built-in operators for comparison, logic, and string manipulation.
 - **[Arithmetic & Variables](docs/datatypes/numbers.md)** - Determine the value of arithmetic expressions using addition, subtraction, multiplication, division, exponents, brackets, variables, and determinants.
 - **[Unit conversion](docs/datatypes/units.md)** - Convert between various compatible units, including length, mass, time, temperature, area, volume, speed, and more.
 - **[Matrix operations](docs/datatypes/matrices.md)** - Create matrices with built-in support for addition, multiplication, transpose, inverse, determinant, eigenvalues, and other common linear algebra operations.
