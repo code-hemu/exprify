@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project follows semantic versioning.
 
+## [1.0.8] - 2026-06-26
+
+### Added
+
+- **Physical Quantity Arithmetic** — Cross-type multiplication and division now produces correct derived units:
+  `length × length → area`, `area × length → volume`,
+  `voltage × current → power`, `energy ÷ time → power`,
+  `power × time → energy`, `voltage ÷ resistance → current`,
+  `current × resistance → voltage`, `force ÷ area → pressure`,
+  `pressure × area → force`
+- **Temperature conversion** — `°F↔°C↔K` now uses proper offset formulas via Kelvin intermediary
+  (`98.6 F to C` → `"37 C"`)
+- **React example** — New `examples/react/` directory with a Vite-powered unit converter app
+  (12 quick-convert presets, `npm run dev` to start)
+- Derived unit results support `to` conversions (`5 m * 3 m to cm2` → `"150000 cm2"`)
+
+### Changed
+
+- Renamed `src/utils/globalUnits.js` → `src/utils/units.js`
+
+### Fixed
+
+- **Unit tokenizer case sensitivity** — Uppercase unit keys (`V`, `A`, `F`, `C`, `K`, `Hz`, `W`, etc.) now recognized
+- **Unit name disambiguation** — Duplicate unit names (`F`: farad/Fahrenheit, `rad`: angle/radiation,
+  `S`/`s`: siemens/second) are resolved by context of the paired unit.
+  `1 F to mF` → farad (capacitance), `98.6 F to C` → Fahrenheit (temperature)
+
 ## [1.0.5] - 2026-06-12
 
 ### Added
