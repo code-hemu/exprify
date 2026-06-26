@@ -163,7 +163,7 @@ export function tokenize(expr, context = {}) {
       const unit = numUnit[3];
 
       tokens.push({
-        type: units.includes(unit) ? 'NumberWithUnit' : 'UnknownUnit',
+        type: units.includes(unit.toLowerCase()) ? 'NumberWithUnit' : 'UnknownUnit',
         value,
         unit,
         pos: index,
@@ -174,7 +174,7 @@ export function tokenize(expr, context = {}) {
     }
 
     // UNIT
-    if (units.includes(current)) {
+    if (units.includes(current.toLowerCase())) {
       const { prevWord } = getContext(expr, index);
       if (nextChar !== '(') {
         if (prevWord) {

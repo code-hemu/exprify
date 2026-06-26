@@ -84,7 +84,23 @@ export function createUnitsStore(initial = {}) {
       );
     }
 
-    const result = value * (from.data.value / to.data.value);
+    let result;
+
+    if (from.type === 'temperature') {
+      // Convert to Kelvin first, then to target
+      let kelvin = 0;
+      if (from.key === 'K') kelvin = value;
+      else if (from.key === 'C') kelvin = value + 273.15;
+      else if (from.key === 'F') kelvin = (value - 32) * (5 / 9) + 273.15;
+      else throw new Error(`Unsupported temperature unit: ${from.key}`);
+
+      if (to.key === 'K') result = kelvin;
+      else if (to.key === 'C') result = kelvin - 273.15;
+      else if (to.key === 'F') result = (kelvin - 273.15) * (9 / 5) + 32;
+      else throw new Error(`Unsupported temperature unit: ${to.key}`);
+    } else {
+      result = value * (from.data.value / to.data.value);
+    }
 
     return { value: result, unit: to.key };
   }
