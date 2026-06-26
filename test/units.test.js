@@ -237,6 +237,45 @@ describe('Units - Individual Feature Tests', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // Unit Name Disambiguation (F, rad, S share keys across categories)
+  // ---------------------------------------------------------------------------
+  describe('Unit Name Disambiguation', () => {
+    test('F with mF resolves to farad (capacitance)', () => {
+      expect(expr.evaluate('1 F to mF')).toBe('1000 mF');
+    });
+
+    test('F with uF arithmetic resolves to farad', () => {
+      const result = expr.evaluate('1 F + 1000 uF');
+      expect(parseFloat(result)).toBeCloseTo(1.001);
+      expect(result).toMatch(/ F$/);
+    });
+
+    test('F with C resolves to fahrenheit (temperature)', () => {
+      expect(expr.evaluate('98.6 F to C')).toBe('37 C');
+    });
+
+    test('F with K resolves to fahrenheit (temperature)', () => {
+      expect(expr.evaluate('212 F to K')).toBe('373.15 K');
+    });
+
+    test('rad with deg resolves to angle', () => {
+      expect(expr.evaluate('1 rad to deg')).toBe('57.2958 deg');
+    });
+
+    test('rad with Gy resolves to radiation', () => {
+      expect(expr.evaluate('1 rad to Gy')).toBe('0.01 Gy');
+    });
+
+    test('S (siemens) to ohm resolves to resistance', () => {
+      expect(expr.evaluate('1 S to ohm')).toBe('1 ohm');
+    });
+
+    test('s (second) to min resolves to time', () => {
+      expect(expr.evaluate('60 s to min')).toBe('1 min');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Unit Conversions - Area / Volume / Data / Angle / Radiation
   // ---------------------------------------------------------------------------
   describe('Unit Conversions - Area / Volume / Data / Angle / Radiation', () => {

@@ -41,9 +41,11 @@ export function createUnitsStore(initial = {}) {
 
   /**
    * @param {string} input
+   * @param {string|null} [relatedType]
    */
-  function findUnit(input) {
+  function findUnit(input, relatedType = null) {
     input = input.toLowerCase();
+    let firstMatch = null;
 
     for (const type in units) {
       for (const key in units[type]) {
@@ -54,12 +56,17 @@ export function createUnitsStore(initial = {}) {
           u.unit?.toLowerCase() === input ||
           u.symbol?.toLowerCase() === input
         ) {
-          return { type, key, data: u };
+          if (type === relatedType) {
+            return { type, key, data: u };
+          }
+          if (!firstMatch) {
+            firstMatch = { type, key, data: u };
+          }
         }
       }
     }
 
-    return null;
+    return firstMatch;
   }
 
   /**
@@ -68,8 +75,8 @@ export function createUnitsStore(initial = {}) {
    * @param {any} toUnit
    */
   function convert(value, fromUnit, toUnit) {
-    const from = findUnit(fromUnit);
     const to = findUnit(toUnit);
+    const from = findUnit(fromUnit, to?.type || null);
 
     if (!from) {
       throw new Error(`Unknown unit: ${fromUnit}`);
@@ -157,8 +164,17 @@ export function createUnitsStore(initial = {}) {
 
       // BOTH UNIT
       if (isUnit(left) && isUnit(right)) {
-        const from = this.findUnit(right.unit);
-        const to = this.findUnit(left.unit);
+        let from = this.findUnit(right.unit);
+        let to = this.findUnit(left.unit);
+
+        if (from && to && from.type !== to.type) {
+          const f2 = this.findUnit(right.unit, to.type);
+          const t2 = this.findUnit(left.unit, from.type);
+          if (f2 && t2 && f2.type === t2.type) {
+            from = f2;
+            to = t2;
+          }
+        }
 
         if (!from || !to || from.type !== to.type) {
           throw new Error(`Cannot operate on different unit types`);
