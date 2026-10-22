@@ -4,11 +4,9 @@ node_modules/
 # Coverage
 coverage/
 
-# Husky generated scripts
-.husky/
-
 # Build output
 dist/
+.types/
 
 # Temporary/utility scripts
 scripts/
