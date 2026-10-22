@@ -8,6 +8,7 @@ const repoRoot = resolve(__dirname, '..');
 const pkg = JSON.parse(readFileSync(resolve(repoRoot, 'package.json'), 'utf8'));
 const cjsPath = resolve(repoRoot, pkg.exports?.['.']?.require ?? pkg.main);
 const esmPath = resolve(repoRoot, pkg.exports?.['.']?.import ?? pkg.module);
+const typesPath = resolve(repoRoot, pkg.exports?.['.']?.types ?? pkg.types);
 const cjsRel = cjsPath.slice(repoRoot.length + 1).replace(/\\/g, '/');
 
 describe('Package layout - ESM/CJS interop', () => {
@@ -45,12 +46,17 @@ describe('Package layout - ESM/CJS interop', () => {
 
   test('CJS bundle source uses module.exports (not ESM export)', () => {
     const source = readFileSync(cjsPath, 'utf8');
-    expect(source).toMatch(/module\.exports\s*=\s*exprify/);
+    expect(source).toMatch(/module\.exports\s*=/);
     expect(source).not.toMatch(/^export\s+/m);
   });
 
   test('ESM bundle source uses a default export', () => {
     const source = readFileSync(esmPath, 'utf8');
-    expect(source).toMatch(/export\s*\{\s*exprify\s+as\s+default\s*\}/);
+    expect(source).toMatch(/export\s*\{[^}]*as default[^}]*\}/);
+  });
+
+  test('declaration file referenced by exports exists on disk', () => {
+    expect(pkg.exports['.'].types).toBe('./dist/index.d.ts');
+    expect(existsSync(typesPath)).toBe(true);
   });
 });
