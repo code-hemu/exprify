@@ -1,32 +1,82 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import dts from "@guchho/dts";
+import banner from "@guchho/banner";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'));
 
-const short_banner = `/*! ${pkg.name} v${pkg.version} | * (c) ${new Date().getFullYear()} ${pkg.author} and contributors | ${pkg.license} License*/`;
-
-const big_banner = `/*!
-* ${pkg.name} v${pkg.version}
-* (c) ${new Date().getFullYear()} ${pkg.author} and other contributors
-*
-* Released under the ${pkg.license} License
-* Date: ${new Date().toISOString().split('T')[0]}
-*/`;
+const sharedOutputOptions = {
+  entry: "src/index.js",
+  target: "esnext",
+  bundle: true,
+  sourcemap: true,
+  treeShaking: true,
+  exports: "default"
+}
 
 export default [
-    {
-        build: {
-            entry: 'src/index.js',
-            outfile: 'dist/exprify.esm.js',
-            outdir: 'dist',
-            format: 'esm',
-            banner: big_banner,
-            platform: 'neutral',
-            sourcemap: true,
-            target: 'esnext',
-            minify: false
-        },
-    }
+  {
+    build: {
+      ...sharedOutputOptions,
+      outfile: "dist/exprify.esm.js",
+      format: "esm",
+      minify: false,
+      define: { __DEV__: 'true' }
+    },
+    plugins: [
+      banner({
+        style: "long",
+        packageJson: "./package.json",
+      }),
+      dts({
+        entry: ".types/index.d.ts",
+        outfile: "dist/index.d.ts",
+        respectExternal: true
+      })
+    ]
+  },
+  {
+    build: {
+      ...sharedOutputOptions,
+      outfile: "dist/exprify.cjs.cjs",
+      format: "cjs",
+      minify: false,
+      define: { __DEV__: 'true' }
+    },
+    plugins: [
+      banner({
+        style: "long",
+        packageJson: "./package.json",
+      })
+    ]
+  },
+  {
+    build: {
+      ...sharedOutputOptions,
+      outfile: "dist/exprify.js",
+      name: "Exprify",
+      format: "umd",
+      minify: false,
+      define: { __DEV__: 'true' }
+    },
+    plugins: [
+      banner({
+        style: "long",
+        packageJson: "./package.json",
+      })
+    ]
+  },
+  {
+    build: {
+      ...sharedOutputOptions,
+      outfile: "dist/exprify.min.js",
+      name: "Exprify",
+      format: "umd",
+      minify: true,
+      define: { __DEV__: 'false' }
+    },
+    plugins: [
+      banner({
+        style: "short",
+        packageJson: "./package.json",
+      })
+    ]
+  }
 ];
