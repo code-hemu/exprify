@@ -1,5 +1,4 @@
 .github/
-.husky/
 
 docs/
 test/
@@ -8,6 +7,7 @@ node_modules/
 coverage/
 scripts/
 examples/
+.types/
 
 .gitignore
 .npmignore
@@ -22,9 +22,8 @@ CHANGELOG.md
 CONTRIBUTING.md
 
 tsconfig.json
+tsconfig.types.json
 package-lock.json
 
-lint.config.js
 rollup.config.js
-eslint.config.js
 
