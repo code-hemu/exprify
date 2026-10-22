@@ -186,7 +186,8 @@ Output is written to `dist/`.
 npm test
 ```
 
-Tested in CI across Node 20 and 22. See `.github/workflows/ci.yml` for details.
+The suite runs on Node's built-in test runner (`node:test`); `npm test` rebuilds the
+bundles first and then runs every file in `test/`.
 
 ## Contributing
 
