@@ -1,12 +1,14 @@
 {
   "name": "exprify",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "A powerful math expression parser and evaluator with runtime data-type checking",
   "type": "module",
   "main": "dist/exprify.cjs.cjs",
   "module": "dist/exprify.esm.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/exprify.esm.js",
       "require": "./dist/exprify.cjs.cjs"
     }
@@ -22,25 +24,16 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "overrides": {
-    "test-exclude": "^7.0.1",
-    "glob": "^13.0.6"
-  },
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
     "clean": "node tools/clean.js",
-    "build": "guchho build --bundle",
+    "dev": "cd playground && guchho dev --open",
+    "build": "npm run build:types && guchho build",
+    "build:types": "tsc -p tsconfig.types.json",
+    "playground:build": "cd playground && guchho build",
+    "typecheck": "tsc --noEmit",
+    "pretest": "npm run build",
     "test": "node tools/test.js",
-    "test:coverage": "node tools/test.js --coverage",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
-  },
-  "jest": {
-    "testMatch": [
-      "**/test/**/*.js"
-    ]
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "math",
@@ -61,13 +54,10 @@
   },
   "homepage": "https://github.com/code-hemu/exprify#readme",
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^29.0.3",
-    "@rollup/plugin-node-resolve": "^16.0.0",
-    "@rollup/plugin-terser": "^1.0.0",
-    "jest": "^30.4.2",
-    "prettier": "^3.8.4",
-    "rollup": "^4.0.0",
-    "guchho": "^1.0.3",
-    "typescript": "^6.0.3"
+    "@guchho/banner": "^0.1.4",
+    "@guchho/dts": "^0.2.0",
+    "@typescript/typescript6": "^6.0.2",
+    "guchho": "^1.0.8",
+    "typescript": "^7.0.2"
   }
 }
