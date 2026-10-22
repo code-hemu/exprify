@@ -18,20 +18,15 @@ npm run build
 
 | Command | Description |
 |---|---|
-| `npm test` | Run Jest test suite |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run lint` | Lint source with ESLint |
-| `npm run lint:fix` | Auto-fix lint issues |
-| `npm run format:check` | Check formatting with Prettier |
-| `npm run format` | Auto-format all files with Prettier |
 | `npm run typecheck` | Type-check with TypeScript (`tsc --noEmit`) |
-| `npm run build` | Clean and rebuild all dist bundles |
+| `npm run build:types` | Emit declarations from the JSDoc-typed sources into `.types/` |
+| `npm run build` | Rebuild all dist bundles and `dist/index.d.ts` |
+| `npm test` | Build, then run the test suite (`node:test`) |
 
 **Before submitting a PR**, make sure:
-- `npm run lint` passes
 - `npm run typecheck` passes
 - `npm test` passes (all tests green)
-- `npm run format:check` passes
+
 
 ## Project Structure
 
@@ -49,7 +44,7 @@ exprify/
 1. **Fork** the repository.
 2. **Create a branch**: `git checkout -b feature/your-feature` — use prefixes like `feature/`, `fix/`, or `docs/`.
 3. **Make your changes** — keep the PR focused on a single concern.
-4. **Run all checks** — lint, typecheck, tests, format.
+4. **Run all checks** — typecheck, tests, format.
 5. **Commit** your changes with a clear message: `git commit -m "Add your feature"`
 6. **Push** your branch: `git push origin feature/your-feature`
 7. **Open a pull request** against the `master` branch.
@@ -59,7 +54,6 @@ Your PR will be reviewed. Please respond to any feedback — it's appreciated, n
 ## Style & Conventions
 
 - Code is formatted with **Prettier** (see `.prettierrc`).
-- Linting rules are enforced via **ESLint** (see `eslint.config.js`).
 - The project uses **ESM** (`"type": "module"`) — use `import`/`export` syntax.
 - Follow the patterns you see in existing source and tests.
 
