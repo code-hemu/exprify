@@ -243,7 +243,7 @@ function render(outcome) {
 function initMenu() {
   el.functionsToggle.addEventListener('click', (event) => {
     event.stopPropagation();
-    setMenuOpen(!el.functionsPanel.hidden);
+    setMenuOpen(el.functionsPanel.hidden);
   });
 
   el.functionsFilter.addEventListener('input', () => {
