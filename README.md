@@ -180,6 +180,21 @@ npm run build
 
 Output is written to `dist/`.
 
+## Playground
+
+A minimal browser calculator ships with the repo: type an expression, see the
+result live — units, fractions, big numbers and matrices included. The
+**Functions** menu lists every function in the library; search it and click to
+insert the call.
+
+```bash
+npm run dev            # starts the dev server and opens a browser
+npm run playground:build   # production bundle in playground/dist/
+```
+
+The playground lives in `playground/` and is built with [Guchho](https://github.com/code-hemu/guchho),
+an HTML-first bundler.
+
 ## Testing
 
 ```bash
