@@ -66,6 +66,7 @@ test('a matrix result is rendered as a grid', () => {
 });
 
 test('the function menu opens with the library functions', () => {
+  dom.el('functions-panel').hidden = true;
   dom.el('functions-toggle').dispatch('click');
 
   assert.equal(dom.el('functions-panel').hidden, false);
