@@ -21,6 +21,8 @@ npm run build
 | `npm run typecheck` | Type-check with TypeScript (`tsc --noEmit`) |
 | `npm run build:types` | Emit declarations from the JSDoc-typed sources into `.types/` |
 | `npm run build` | Rebuild all dist bundles and `dist/index.d.ts` |
+| `npm run dev` | Start the playground dev server (Guchho) |
+| `npm run playground:build` | Bundle the playground into `playground/dist/` |
 | `npm test` | Build, then run the test suite (`node:test`) |
 
 **Before submitting a PR**, make sure:
@@ -33,7 +35,8 @@ npm run build
 ```
 exprify/
 ├── src/          # Source code (ESM)
-├── test/         # Jest test files
+├── test/         # Test files (node:test)
+├── playground/   # Browser playground (Guchho, HTML-first)
 ├── dist/         # Build output (ESM, CJS, UMD, minified)
 ├── docs/         # Documentation assets
 └── .github/      # CI workflows and config
