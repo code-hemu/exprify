@@ -102,7 +102,7 @@ test('picking a function inserts it at the caret', () => {
   const item = menuItems().find((child) => child.textContent === 'sqrt');
   item.dispatch('click');
 
-  assert.equal(expression.value, 'sqrt(');
+  assert.equal(expression.value, 'sqrt(16)');
 });
 
 test('the menu can be driven from the keyboard', () => {
@@ -117,5 +117,21 @@ test('the menu can be driven from the keyboard', () => {
   filter.dispatch('keydown', { key: 'ArrowDown' });
   filter.dispatch('keydown', { key: 'Enter' });
 
-  assert.equal(expression.value, 'abs(');
+  assert.equal(expression.value, 'abs(-5)');
+});
+
+test('every function has a runnable example', () => {
+  const names = app.functionGroups().flatMap((group) => group.members);
+
+  for (const name of names) {
+    const example = app.FUNCTION_EXAMPLES[name];
+    assert.ok(example, `missing example for ${name}`);
+
+    const outcome = app.evaluateExpression(example);
+    assert.notEqual(
+      outcome.kind,
+      'error',
+      `${name}: ${example} -> ${outcome.text}`,
+    );
+  }
 });
