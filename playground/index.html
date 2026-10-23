@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Exprify Playground</title>
+    <meta
+      name="description"
+      content="A minimal calculator for Exprify: type an expression, see the result live."
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="card">
+      <header class="card-head">
+        <h1><span aria-hidden="true">∑</span> Exprify</h1>
+
+        <div class="card-tools">
+          <div class="menu" id="menu">
+            <button
+              type="button"
+              id="functions-toggle"
+              class="menu-toggle"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              <span aria-hidden="true">ƒ</span> Functions
+            </button>
+
+            <div id="functions-panel" class="menu-panel" hidden>
+              <input
+                id="functions-filter"
+                class="menu-filter"
+                type="search"
+                placeholder="Search functions…"
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="Search functions"
+              />
+              <div id="functions-list" class="menu-list"></div>
+            </div>
+          </div>
+
+          <span class="version" id="version"></span>
+        </div>
+      </header>
+
+      <input
+        id="expression"
+        class="expression"
+        type="text"
+        placeholder="2 + 3 * 4"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        aria-label="Expression"
+      />
+
+      <output id="result" class="result" for="expression"></output>
+
+      <p class="hint">
+        Units, fractions, big numbers, matrices and the whole function library are
+        supported. Try <code>5 km to mi</code> or <code>derivative("x^2", "x")</code>.
+      </p>
+    </main>
+
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>
