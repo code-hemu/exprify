@@ -30,6 +30,7 @@
     "build": "npm run build:types && guchho build",
     "build:types": "tsc -p tsconfig.types.json",
     "playground:build": "cd playground && guchho build",
+    "lint": "guchho lint",
     "typecheck": "tsc --noEmit",
     "pretest": "npm run build",
     "test": "node tools/test.js",
@@ -57,7 +58,7 @@
     "@guchho/banner": "^0.1.4",
     "@guchho/dts": "^0.2.0",
     "@typescript/typescript6": "^6.0.2",
-    "guchho": "^1.0.8",
+    "guchho": "^1.0.9",
     "typescript": "^7.0.2"
   }
 }
